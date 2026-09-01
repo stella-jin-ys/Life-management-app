@@ -14,8 +14,8 @@ function AuthenticatedApp() {
   return <App user={user} profile={profile} onSignOut={signOut} />
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+function AuthenticatedRoutes() {
+  return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -32,5 +32,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+  )
+}
+
+const demoMode = import.meta.env.DEV && new URLSearchParams(window.location.search).has('demo')
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    {demoMode ? <App /> : <AuthenticatedRoutes />}
   </React.StrictMode>,
 )
