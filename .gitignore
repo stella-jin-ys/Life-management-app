@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*.local
+supabase/.env.local
+.supabase/
+.worktrees/
+.superpowers/sdd/
+playwright-report/
+test-results/
