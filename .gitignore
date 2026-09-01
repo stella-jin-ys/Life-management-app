@@ -2,9 +2,11 @@ node_modules/
 dist/
 .env
 .env.*.local
+!.env.example
 supabase/.env.local
 .supabase/
 .worktrees/
 .superpowers/sdd/
 playwright-report/
 test-results/
+!supabase/.env.example
