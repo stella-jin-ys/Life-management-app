@@ -15,7 +15,8 @@
     "functions:serve": "supabase functions serve --env-file supabase/.env.local",
     "test:functions": "deno test --allow-env supabase/functions/generate-compliment/compliment_test.ts",
     "test:e2e": "playwright test",
-    "verify": "npm run test:run && npm run build"
+    "verify": "vitest run && vite build",
+    "verify:full": "npm run verify && npm run test:functions && npm run test:db && npm run test:e2e"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2",

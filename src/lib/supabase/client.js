@@ -11,12 +11,17 @@ export function getSupabaseConfig(env) {
   return { url, anonKey }
 }
 
-const { url, anonKey } = getSupabaseConfig(import.meta.env)
+const config = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
+  ? getSupabaseConfig(import.meta.env)
+  : null
 
-export const supabase = createClient(url, anonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-})
+export const isSupabaseConfigured = Boolean(config)
+export const supabase = config
+  ? createClient(config.url, config.anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null

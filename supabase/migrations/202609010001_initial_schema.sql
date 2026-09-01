@@ -143,6 +143,21 @@ create trigger milestones_updated_at
 before update on public.milestones
 for each row execute function public.set_updated_at();
 
+create or replace function public.sync_milestone_completion()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.completed_at = case when new.is_complete then coalesce(new.completed_at, now()) else null end;
+  return new;
+end;
+$$;
+
+create trigger milestones_completion_sync
+before insert or update on public.milestones
+for each row execute function public.sync_milestone_completion();
+
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();

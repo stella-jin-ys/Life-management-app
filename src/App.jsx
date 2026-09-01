@@ -6,37 +6,16 @@ import HealthPanel from './components/HealthPanel.jsx'
 import HighlightsPanel from './components/HighlightsPanel.jsx'
 import LowBatteryPanel from './components/LowBatteryPanel.jsx'
 import MoodCheckIn from './components/MoodCheckIn.jsx'
-import {
-  feelings,
-  healthMetrics,
-  initialGoal,
-  initialHighlights,
-  moods,
-} from './data/demoData.js'
-import { createCompliment } from './lib/dashboard.js'
+import { feelings, moods } from './data/demoData.js'
+import useDashboardData from './features/dashboard/useDashboardData.js'
 
-export default function App() {
+export default function App({ user, profile, onSignOut }) {
   const [activeSection, setActiveSection] = useState('dashboard')
-  const [selectedMood, setSelectedMood] = useState('steady')
-  const [selectedFeeling, setSelectedFeeling] = useState('drained')
-  const [highlights, setHighlights] = useState(initialHighlights)
-  const [goal, setGoal] = useState(initialGoal)
-
-  function addHighlight(entry) {
-    setHighlights((current) => [
-      { id: current.length + 1, entry, compliment: createCompliment(entry), time: 'Now' },
-      ...current,
-    ])
-  }
-
-  function toggleMilestone(id) {
-    setGoal((current) => ({
-      ...current,
-      milestones: current.milestones.map((milestone) =>
-        milestone.id === id ? { ...milestone, complete: !milestone.complete } : milestone,
-      ),
-    }))
-  }
+  const { selectedMood, selectedFeeling, highlights, metrics, goal, signal, loading, error,
+    selectMood, selectFeeling, addHighlight, updateMetric, toggleMilestone } = useDashboardData(user, profile)
+  const dateLabel = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: profile?.timezone || undefined,
+  }).format(new Date())
 
   function navigateTo(section) {
     setActiveSection(section)
@@ -44,11 +23,11 @@ export default function App() {
   }
 
   return (
-    <AppShell activeSection={activeSection} onNavigate={navigateTo}>
+    <AppShell activeSection={activeSection} onNavigate={navigateTo} user={user} profile={profile} onSignOut={onSignOut}>
       <div className="dashboard-intro">
         <div className="welcome-copy">
-          <p className="date-line">Monday, 31 August</p>
-          <h1>Good morning, Stella</h1>
+          <p className="date-line">{dateLabel}</p>
+          <h1>Good morning, {profile?.display_name || 'Stella'}</h1>
           <p className="welcome-note">
             Let’s notice what’s here, celebrate what helped, and choose one
             gentle next step.
@@ -56,12 +35,14 @@ export default function App() {
         </div>
         <div className="daylight-mark" aria-hidden="true"><span /></div>
       </div>
-      <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={setSelectedMood} />
+      {error && <p className="data-error" role="alert">{error}</p>}
+      {loading && <p className="data-loading" role="status">Gathering your latest notes…</p>}
+      <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={selectMood} />
       <div className="dashboard-grid">
         <HighlightsPanel highlights={highlights} onAddHighlight={addHighlight} />
         <LowBatteryPanel feelings={feelings} selectedFeeling={selectedFeeling}
-          onSelectFeeling={setSelectedFeeling} />
-        <HealthPanel metrics={healthMetrics} />
+          signal={signal} onSelectFeeling={selectFeeling} />
+        <HealthPanel metrics={metrics} onAdjustMetric={updateMetric} />
         <GoalsPanel goal={goal} onToggleMilestone={toggleMilestone} />
       </div>
     </AppShell>

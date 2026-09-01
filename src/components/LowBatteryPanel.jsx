@@ -1,9 +1,7 @@
 import { BatteryLow, Heart } from 'lucide-react'
 
-import { getComfortSignal } from '../lib/dashboard.js'
 
-export default function LowBatteryPanel({ feelings, selectedFeeling, onSelectFeeling }) {
-  const signal = getComfortSignal(selectedFeeling)
+export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onSelectFeeling }) {
 
   return (
     <section className="panel battery-panel" id="battery" aria-labelledby="battery-title">
@@ -24,11 +22,11 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, onSelectFee
       </div>
 
       <div className="comfort-signal">
-        <div className="battery-meter" aria-label={`${signal.percentage}% shared feeling demo signal`}>
+        <div className="battery-meter" aria-label={signal.percentage == null ? 'Shared feeling percentage unavailable' : `${signal.percentage}% shared feeling signal`}>
           <span style={{ transform: `scaleX(${signal.percentage / 100})` }} />
         </div>
-        <p className="signal-number"><strong>{signal.percentage}%</strong> of today’s demo check-ins named something similar.</p>
-        <p className="signal-label">Demo community signal</p>
+        <p className="signal-number"><strong>{signal.percentage == null ? '—' : `${signal.percentage}%`}</strong> {signal.status === 'insufficient_data' ? 'Not enough shared check-ins yet to show a comparison.' : 'of recent check-ins named something similar.'}</p>
+        <p className="signal-label">{signal.status === 'insufficient_data' ? 'Private until there is enough data' : signal.status ? 'Community comfort signal' : 'Demo community signal'}</p>
       </div>
 
       <blockquote>{signal.affirmation}</blockquote>

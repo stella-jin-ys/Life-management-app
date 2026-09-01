@@ -281,6 +281,7 @@ h1 {
 .highlight-entry h3 { margin: 0; font-size: .98rem; line-height: 1.4; }
 .highlight-entry p { margin: 7px 0 0; color: var(--muted); font-family: 'Fraunces', Georgia, serif; font-size: .9rem; line-height: 1.55; }
 .highlight-entry > svg { margin-top: 2px; color: #9d8178; }
+.empty-state { margin: 4px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
 
 .battery-panel { background: #eee8f1; }
 .battery-heading > svg { color: #735d7c; }
@@ -335,6 +336,9 @@ h1 {
 .metric-label svg { color: #67734f; }
 .metric-label strong { font-size: .76rem; font-variant-numeric: tabular-nums; }
 .metric-label small { color: var(--muted); font-size: .68rem; font-weight: 500; }
+.metric-controls { display: inline-flex; align-items: center; gap: 6px; }
+.metric-controls button { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid rgb(94 98 69 / 20%); border-radius: 50%; color: #56603e; background: rgb(255 255 255 / 42%); cursor: pointer; }
+.metric-controls button:hover { background: rgb(255 255 255 / 72%); }
 .metric-track { height: 7px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: rgb(94 98 69 / 12%); }
 .metric-track span { display: block; height: 100%; border-radius: inherit; }
 .tone-coral { background: var(--coral); }
@@ -418,4 +422,36 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; }
+}
+
+.auth-page { display: grid; min-height: 100vh; place-items: center; padding: 24px; background: var(--canvas); }
+.auth-card { width: min(100%, 440px); padding: 42px; border: 1px solid var(--line); border-radius: 22px; background: var(--paper); box-shadow: var(--shadow); }
+.auth-mark { position: relative; width: 42px; height: 42px; margin-bottom: 22px; border-radius: 50% 46% 52% 44%; background: var(--coral); transform: rotate(-8deg); }
+.auth-mark span { position: absolute; width: 15px; height: 6px; border: 2px solid #fff8ee; border-top: 0; border-radius: 0 0 12px 12px; top: 19px; }
+.auth-mark span:first-child { left: 7px; transform: rotate(34deg); }
+.auth-mark span:last-child { right: 7px; transform: rotate(-34deg); }
+.eyebrow { margin: 0 0 10px; color: var(--coral-deep); font-size: .73rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.auth-card h1 { max-width: none; font-size: clamp(2.4rem, 8vw, 3.6rem); }
+.auth-note { margin: 14px 0 28px; color: var(--muted); line-height: 1.55; }
+.auth-card form { display: grid; gap: 16px; }
+.auth-card label { display: grid; gap: 7px; color: var(--ink); font-size: .78rem; font-weight: 700; }
+.auth-card input { width: 100%; min-height: 46px; border: 1px solid #cbb9ae; border-radius: 11px; padding: 0 13px; color: var(--ink); background: #fffdf8; }
+.auth-submit { width: 100%; min-height: 46px; margin-top: 4px; }
+.auth-switch, .auth-secondary-link { color: var(--muted); font-size: .8rem; text-align: center; }
+.auth-switch { margin: 22px 0 10px; }
+.auth-switch a, .auth-secondary-link { color: var(--coral-deep); font-weight: 700; }
+.auth-secondary-link { display: block; text-decoration: none; }
+.form-error { margin: 0; color: #8f2f36; font-size: .78rem; line-height: 1.45; }
+.form-note { margin: 0; color: #53683f; font-size: .78rem; line-height: 1.45; }
+.route-loading { display: grid; min-height: 100vh; place-items: center; color: var(--muted); background: var(--canvas); font-family: 'Fraunces', Georgia, serif; font-size: 1.25rem; }
+.account-footer { display: grid; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.account-footer div { display: grid; gap: 3px; min-width: 0; }
+.account-footer strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem; }
+.account-footer small { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: .68rem; }
+.account-footer button { justify-self: start; border: 0; padding: 0; color: var(--coral-deep); background: transparent; font-size: .75rem; font-weight: 700; cursor: pointer; }
+.data-loading, .data-error { margin: 12px 0 0; color: var(--muted); font-size: .78rem; }
+.data-error { color: #8f2f36; }
+
+@media (max-width: 767px) {
+  .auth-card { padding: 32px 24px; }
 }

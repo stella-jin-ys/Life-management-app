@@ -40,7 +40,7 @@ const upcomingItems = [
   { label: 'Settings', icon: Settings },
 ]
 
-export default function Sidebar({ activeSection, onNavigate, mobile = false }) {
+export default function Sidebar({ activeSection, onNavigate, mobile = false, user, profile, onSignOut }) {
   return (
     <aside className={mobile ? 'navigation-panel' : 'navigation-rail'}>
       <div className="brand-lockup">
@@ -77,6 +77,7 @@ export default function Sidebar({ activeSection, onNavigate, mobile = false }) {
         <span className="rail-note-dot" aria-hidden="true" />
         <p><strong>Small steps count.</strong>You have already begun.</p>
       </div>
+      {user && <div className="account-footer"><div><strong>{profile?.display_name || 'Friend'}</strong><small>{user.email}</small></div><button type="button" onClick={onSignOut}>Sign out</button></div>}
     </aside>
   )
 }
