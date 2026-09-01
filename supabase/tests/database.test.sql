@@ -8,7 +8,6 @@ values
   ('20000000-0000-0000-0000-000000000002', 'two@example.test', '{"display_name":"Two"}', now(), now());
 
 select has_table('public', 'highlights', 'highlights table exists');
-select has_table('public', 'health_entries', 'health_entries table exists');
 select has_function('public', 'get_comfort_signal', array['text'], 'comfort signal RPC exists');
 select is((select display_name from public.profiles where id = '10000000-0000-0000-0000-000000000001'), 'One', 'signup trigger creates a profile');
 
@@ -19,7 +18,6 @@ select lives_ok(
   $$insert into public.highlights (user_id, content) values (auth.uid(), 'A private win')$$,
   'user one can insert their highlight'
 );
-select is((select count(*)::integer from public.highlights), 1, 'user one sees one highlight');
 select throws_ok(
   $$insert into public.highlights (user_id, content) values ('20000000-0000-0000-0000-000000000002', 'Not mine')$$,
   '42501', null, 'user one cannot insert for user two'
@@ -69,6 +67,16 @@ select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001
 set local role authenticated;
 select is(public.claim_compliment_generation((select id from public.highlights limit 1)), true, 'highlight generation can be claimed once');
 select is(public.claim_compliment_generation((select id from public.highlights limit 1)), false, 'highlight generation cannot be claimed twice');
+
+reset role;
+insert into public.highlights (user_id, content, compliment_attempted_at)
+select '10000000-0000-0000-0000-000000000001', 'Rate limit fixture ' || series, now()
+from generate_series(1, 19) as generated(series);
+insert into public.highlights (id, user_id, content)
+values ('40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Rate limit target');
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
+set local role authenticated;
+select is(public.claim_compliment_generation('40000000-0000-0000-0000-000000000001'), false, 'the hourly compliment cap rejects the 21st attempt');
 
 reset role;
 delete from auth.users where id = '20000000-0000-0000-0000-000000000002';

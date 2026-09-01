@@ -271,10 +271,13 @@ language sql
 security definer
 set search_path = public, pg_temp
 as $$
-  with claimed as (
+  with user_lock as materialized (
+    select pg_advisory_xact_lock(hashtextextended(coalesce(auth.uid()::text, ''), 0))
+  ), claimed as (
     update public.highlights
     set compliment_attempted_at = now()
     where id = p_highlight_id
+      and exists (select 1 from user_lock)
       and user_id = auth.uid()
       and compliment_status = 'pending'
       and compliment_attempted_at is null
