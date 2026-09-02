@@ -26,6 +26,17 @@ Open `http://127.0.0.1:5173`. Local Auth email delivery is available through Inb
 
 The browser only receives `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. If AI compliments are enabled, copy `supabase/.env.example` to `supabase/.env.local`, add `OPENAI_API_KEY`, and serve the function with `npm run functions:serve`. The OpenAI key is never a Vite variable.
 
+## Hosted authentication
+
+The GitHub Pages workflow automatically publishes the demo until both repository secrets below are configured. Once they exist, the next deployment uses the real login and Supabase-backed data flow:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+Create a Supabase project, apply `supabase/migrations/202609010001_initial_schema.sql`, deploy the `generate-compliment` Edge Function if desired, then add the two values under the GitHub repository’s Settings → Secrets and variables → Actions. Never add a Supabase service-role key or `OPENAI_API_KEY` to Vite variables or the browser.
+
 ## Verify
 
 ```bash
