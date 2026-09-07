@@ -234,6 +234,8 @@ Scope: one final safe toolchain attempt only. No package scripts, application co
 
 The Deno/function-test blocker is resolved through a safe npm-provided runtime route: 5/5 function tests pass. The local backend baseline remains externally blocked: the existing Supabase CLI is available and Docker has cached images, but `supabase status` finds no `supabase_db_life-management` container and the final startup attempt stalls during image startup. Consequently `db:reset`, `.env.local` population, and Auth-dependent E2E verification remain unavailable. No broad frontend suite/build was rerun because no files outside this report changed.
 
+The Deno invocation generated an untracked `deno.lock` at the repository root. It was not staged or modified further; it is left in place because this round explicitly prohibited destructive cleanup. The pre-existing untracked plan file also remains untouched.
+
 ### Fix-round commit
 
-- Pending fix-round 3 report commit (recorded after commit).
+- `751f13701764a7dc074ad384bf11df5bb110a720` — `docs: append task 1 fix round 3 report`.
