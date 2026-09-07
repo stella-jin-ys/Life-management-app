@@ -1,98 +1,117 @@
+# Life Management App — Final Design
+
+A personal wellbeing platform that helps users notice and hold onto positive moments, find comfort in shared feelings, track physical health gently, and stay motivated toward goals — alongside everyday practical tracking (tasks, study, workouts, sleep, finances, diary).
+
+Reference implementation: [stella-jin-ys/Life-management-app](https://github.com/stella-jin-ys/Life-management-app)
+
 ---
-title: The Daylight Ledger
-product: Life Management
-platform: web
-status: implemented
+
+## 1. Architecture
+
+The reference repo's `PRODUCT.md` (source of truth) describes the current build as **a local prototype with authored demo data and local UI state** — not a live backend yet. `README.md` describes an aspirational hosted architecture; treat that as the target, not the current state.
+
+| Layer | Current (prototype) | Target (per README) |
+|---|---|---|
+| Frontend | React + Vite | React + Vite |
+| Data & auth | Local UI state, demo data | Supabase Postgres + Auth + Row Level Security |
+| Highlights compliments | Deterministic local phrase bank | OpenAI generation, deterministic fallback |
+| Low Battery data | Demo community signal (not real research) | Real aggregated check-ins, hidden until 10+ exist (privacy floor) |
+| Testing | — | Playwright e2e, `test:functions`, `test:db` |
+
+**Environment note:** this session can read the repo's docs but cannot clone or run it (no network access, no GitHub tree browsing). Hand the repo off to an environment that can actually check it out (e.g. Claude Code) for implementation.
+
 ---
 
-# Design System
+## 2. Design system — "Daylight Ledger" (adjusted)
 
-## North Star
+Typography: **Fraunces** (600/700) for greetings, card titles, affirmations, and key numbers. **Manrope** (400–700) for body, labels, nav, buttons. Fallback: Georgia (serif) / system sans.
 
-Life Management should feel like a quiet morning notebook rather than a performance dashboard. The interface makes progress tangible without urgency: generous paper-like surfaces, soft daylight color, editorial headings, and plainspoken encouragement turn daily tracking into a gentle act of noticing.
+Radius: 18px cards · 13–14px compact controls/inputs · 999px pills and progress bars.
+Shadow: `0 18px 50px rgba(60,70,55,0.10)` on Paper cards.
+Desktop nav rail: fixed width (280px in the source spec; scaled to ~190px in these preview mockups for chat width).
 
-## Experience Principles
+### Color tokens
 
-- Celebrate evidence, not streaks. Small wins receive the strongest narrative emphasis.
-- Comfort before correction. Low-energy states are named without diagnosis or shame.
-- Keep momentum legible. Every progress view pairs its measure with a humane next step.
-- Mark simulated data honestly. Community percentages are always labeled as demo signals.
-- Preserve calm at every size. Desktop uses a persistent rail; mobile becomes a focused single column.
+| Token | Original (repo) | **Adjusted (this session)** | Use |
+|---|---|---|---|
+| Canvas | `#f7f2e9` (beige) | **`#e9f2e6`** (mint) | Page background |
+| Rail | `#efe6d8` | **`#dcebd7`** | Sidebar background |
+| Line | `#ded4c8` | **`#d3ddd0`** | Borders, dividers, track backgrounds |
+| Paper | `#fffaf3` | **`#fbfefa`** | Card surfaces |
+| Ink | `#332638` | unchanged | Primary text |
+| Muted | `#71636e` | unchanged | Secondary text |
+| Coral | `#ef8e7d` | unchanged | Highlights accent |
+| Deep coral | `#a74642` | unchanged | Primary buttons, focus states |
+| Peach | `#f7c6ae` | unchanged | Celebratory / selected surfaces |
+| Moss | `#879468` | unchanged | Physical wellbeing (Diet, Workout, Sleeping) |
+| Lavender | `#c8b9d8` | unchanged | Emotional comfort (Low Battery) |
+| Gold | `#d6a856` | unchanged | Goal momentum |
 
-## Color
+*Canvas/Rail/Line were changed at the user's request for a more energetic feel; this diverges from the repo's intentionally calm "quiet morning notebook" brief — worth a final gut-check before shipping.*
 
-| Token | Value | Use |
-| --- | --- | --- |
-| Canvas | `#f7f2e9` | Page background |
-| Paper | `#fffaf3` | Cards and inset surfaces |
-| Rail | `#efe6d8` | Desktop navigation |
-| Ink | `#332638` | Primary text |
-| Muted | `#71636e` | Supporting copy |
-| Line | `#ded4c8` | Borders and separators |
-| Coral | `#ef8e7d` | Warm action and highlight accent |
-| Deep coral | `#a74642` | Strong action and focus outline |
-| Peach | `#f7c6ae` | Selected and celebratory surfaces |
-| Moss | `#879468` | Physical wellbeing progress |
-| Lavender | `#c8b9d8` | Emotional comfort |
-| Gold | `#d6a856` | Goal momentum |
+---
 
-Color never carries state alone; selected controls also use weight, borders, labels, or native semantics.
+## 3. Navigation
 
-## Typography
+Flat list, sorted by logging frequency (no section headers):
 
-- Display: Fraunces, 600–700. Used for the greeting, card titles, affirmations, and key numbers.
-- Interface and body: Manrope, 400–700. Used for navigation, controls, labels, and explanatory text.
-- Fallbacks: Georgia for display; system sans-serif for interface text.
-- Tone: editorial hierarchy with compact, readable supporting copy. Avoid all-caps except short eyebrow labels.
+Dashboard · Highlights · Diet · Sleeping · Diary · Tasks · Study · Workout · Goals · Finance · — divider — · Settings
 
-## Shape, Spacing, and Depth
+*Open question: Low Battery is intentionally **not** in the sidebar (dashboard-access only), per explicit decision — though it's one of the four core modules in the reference repo's own scope. Confirm this is still wanted.*
 
-- Primary card radius: `18px`.
-- Compact control and inset radius: `13–14px`.
-- Pills and progress tracks: `999px`.
-- Card shadow: `0 18px 50px rgb(78 59 66 / 10%)`.
-- Desktop rail: fixed at `280px`; dashboard content begins after the rail.
-- Content spacing is generous and consistent, using a loose 4px-derived rhythm.
+---
 
-## Components
+## 4. Dashboard
 
-### Navigation
+Bento-style grid: Highlights is a large 2×2 tile; the rest are compact tiles. Includes a daily mood check-in row above the grid (smile / neutral / sad / cloud-rain icons).
 
-Desktop keeps the primary destinations and upcoming features in a fixed left rail. Upcoming items include Tasks, Finance, Study, Workout, Sleeping, Diary, and Settings; they are visibly disabled and labeled “Coming soon.” Below `960px`, navigation moves into a menu opened from the mobile header.
+---
 
-### Hero and Mood Check-in
+## 5. Core modules
 
-The hero establishes the day with a personal greeting and abstract daylight mark. Mood choices are real buttons with visible pressed state and a supporting sentence, not decorative tags.
-
-### Highlights
-
-Daily wins read like a short evidence journal. Each entry combines time, the user’s own words, and a specific local compliment. The add action supports empty-input recovery.
+### Highlights — "Your garden"
+- Log a daily win → instantly paired with a compliment from a curated phrase bank (deterministic, not live AI — matches prototype scope)
+- Each entry visualized as a **flower planted in a garden** (chosen over stars-in-sky and leaves-on-plant alternatives)
+- **Everyday log streak reward**: current streak count, 7-day dot tracker, progress toward a milestone reward ("2 days to a rare bloom")
+- Icon: `ti-sparkles`, accent Coral/Deep coral
 
 ### Low Battery
+- User selects a feeling; app shows a **demo** "% of people feel this too" figure, clearly labeled as a demo signal (not real research)
+- Calming affirmations
+- Icon: `ti-heart-handshake` (chosen after two earlier iterations — battery icon, then rain-cloud — for being the most direct representation of shared empathy)
+- Accent: Lavender
 
-Feelings are selectable pills. The meter, percentage, demo label, and calming affirmation change together. Language remains validating and avoids clinical claims.
-
-### Diet & Health
-
-The ring gives one summary value while every metric retains its own label, quantity, and accessible progress value. Coral, moss, lavender, and gold differentiate metrics without replacing text.
+### Diet
+- General food log (no exact meal/time labels required) — e.g. "Oatmeal, eggs, greens, water"
+- Paired with a short **AI encouragement/suggestion**, not a review or score (e.g. "Nice balance today")
+- Logged content is structured for later AI wellbeing analysis, not point-in-time judgment
+- Icon: `ti-apple`, accent Moss
 
 ### Goals
+- **No progress bar.** A short achievement list instead — each goal marked achieved (filled check) or open (dashed circle)
+- Purpose is a sense of accomplishment, not percentage tracking
+- Icon: `ti-target-arrow`, accent Gold
 
-Milestones use checkbox semantics. Completion percentage and the next incomplete milestone update together so progress always points forward.
+---
 
-## Motion and Interaction
+## 6. Supporting modules
 
-- Feedback is restrained: short `300–420ms` progress transforms and a 1px pressed movement.
-- Progress animation uses `transform: scaleX()` from the left to avoid layout work.
-- Keyboard focus uses a 3px deep-coral outline with a 3px offset.
-- Navigation scroll is deliberate; document-level smooth scrolling is disabled for predictable capture and accessibility.
+| Module | Behavior | Visualization |
+|---|---|---|
+| Tasks | Simple daily checklist | Count + thin progress bar |
+| Study | **Free-text log of what was studied** (e.g. "UI design"), not time tracked | Logged text only |
+| Workout | Logged **by day** | 7-day bar chart, today highlighted in Moss; rest days shown as thin bars |
+| Sleeping | Logged by day, compared to weekly average | 7-day **line graph** against a dashed average line — nights above average filled Moss, below average shown in a muted (non-alarming) tone, today's point ringed and enlarged |
+| Diary | Free-form daily journal | Not yet designed in detail |
+| Finance | Basic tracking | Not yet designed in detail |
+| Settings | Account/app preferences | Not yet designed in detail |
 
-## Responsive Behavior
+---
 
-- `960px` and wider: fixed 280px rail and multi-column dashboard.
-- `768–959px`: mobile header and responsive dashboard cards.
-- Below `768px`: single-column reading order, full-width controls, and reduced decorative overlap.
+## 7. Open items for next round
 
-## Content Guidance
-
-Use warm, direct sentences that acknowledge effort without exaggerating it. Prefer “You made room for yourself” over achievement language. Never present demo community data as population research, and never frame the product as medical care.
+- Confirm Low Battery's sidebar placement (see §3)
+- Diary, Finance, and Settings pages still need their own mockups
+- Decide whether to keep the energetic mint Canvas or revert toward the repo's calmer original palette
+- Full Highlights/Diet/Goals page-level mockups (beyond the dashboard tiles) still need the Daylight Ledger reskin applied — only the dashboard has been fully reskinned
+- Hand off to an environment with repo/network access (e.g. Claude Code) to reconcile this design against the actual `src/` components before implementation begins

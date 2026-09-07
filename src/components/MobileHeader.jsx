@@ -1,11 +1,11 @@
-import { Menu, X } from 'lucide-react'
+import { Menu, SunMedium, X } from 'lucide-react'
 
 export default function MobileHeader({ open, onToggle }) {
   return (
     <header className="mobile-header">
       <div className="mobile-wordmark">
-        <span className="brand-mark" aria-hidden="true"><span /><span /></span>
-        <strong>Life Management</strong>
+        <span className="daylight-mark" aria-hidden="true"><SunMedium size={28} strokeWidth={1.7} /></span>
+        <span className="mobile-greeting"><strong>Good morning, Stella</strong><small>Monday, 31 August</small></span>
       </div>
       <button className="menu-trigger" type="button"
         aria-label={open ? 'Close navigation' : 'Open navigation'}

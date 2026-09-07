@@ -6,6 +6,8 @@ import HealthPanel from './components/HealthPanel.jsx'
 import HighlightsPanel from './components/HighlightsPanel.jsx'
 import LowBatteryPanel from './components/LowBatteryPanel.jsx'
 import MoodCheckIn from './components/MoodCheckIn.jsx'
+import SupportingTiles from './components/SupportingTiles.jsx'
+import { SunMedium } from 'lucide-react'
 import {
   feelings,
   healthMetrics,
@@ -46,23 +48,24 @@ export default function App() {
   return (
     <AppShell activeSection={activeSection} onNavigate={navigateTo}>
       <div className="dashboard-intro">
+        <div className="daylight-mark" aria-hidden="true"><SunMedium size={28} strokeWidth={1.7} /></div>
         <div className="welcome-copy">
-          <p className="date-line">Monday, 31 August</p>
           <h1>Good morning, Stella</h1>
+          <p className="date-line">Monday, 31 August</p>
           <p className="welcome-note">
             Let’s notice what’s here, celebrate what helped, and choose one
             gentle next step.
           </p>
         </div>
-        <div className="daylight-mark" aria-hidden="true"><span /></div>
       </div>
       <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={setSelectedMood} />
       <div className="dashboard-grid">
-        <HighlightsPanel highlights={highlights} onAddHighlight={addHighlight} />
+        <HighlightsPanel onAddHighlight={addHighlight} />
         <LowBatteryPanel feelings={feelings} selectedFeeling={selectedFeeling}
           onSelectFeeling={setSelectedFeeling} />
         <HealthPanel metrics={healthMetrics} />
         <GoalsPanel goal={goal} onToggleMilestone={toggleMilestone} />
+        <SupportingTiles />
       </div>
     </AppShell>
   )

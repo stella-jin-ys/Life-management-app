@@ -1,9 +1,6 @@
 import { ArrowRight, Check, Flag } from 'lucide-react'
 
-import { calculateProgress } from '../lib/dashboard.js'
-
 export default function GoalsPanel({ goal, onToggleMilestone }) {
-  const progress = calculateProgress(goal.milestones)
   const next = goal.milestones.find(({ complete }) => !complete)
 
   return (
@@ -11,14 +8,12 @@ export default function GoalsPanel({ goal, onToggleMilestone }) {
       <div className="panel-heading">
         <div>
           <span className="section-symbol symbol-gold"><Flag aria-hidden="true" size={18} /></span>
-          <h2 id="goals-title">Forward, gently</h2>
+          <h2 id="goals-title">Goals</h2>
           <p>{goal.why}</p>
         </div>
-        <span className="goal-percentage">{progress}% complete</span>
       </div>
 
       <h3>{goal.title}</h3>
-      <div className="goal-progress" aria-hidden="true"><span style={{ transform: `scaleX(${progress / 100})` }} /></div>
 
       <div className="milestone-list">
         {goal.milestones.map(({ id, label, complete }) => (

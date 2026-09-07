@@ -8,7 +8,7 @@ export default function MoodCheckIn({ moods, selectedMood, onSelect }) {
   return (
     <section className="mood-checkin" aria-labelledby="mood-title">
       <div className="mood-copy">
-        <h2 id="mood-title">How are you arriving today?</h2>
+        <h2 id="mood-title">Feeling?</h2>
         <p>{selected.note}</p>
       </div>
       <div className="mood-options" aria-label="Choose today's mood">
@@ -18,7 +18,7 @@ export default function MoodCheckIn({ moods, selectedMood, onSelect }) {
             <button type="button" key={id} className="mood-option"
               aria-pressed={selectedMood === id} onClick={() => onSelect(id)}>
               <Icon aria-hidden="true" size={18} />
-              {label}
+              <span className="visually-hidden">{label}</span>
             </button>
           )
         })}

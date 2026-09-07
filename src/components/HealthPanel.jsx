@@ -13,9 +13,13 @@ export default function HealthPanel({ metrics }) {
       <div className="panel-heading">
         <div>
           <span className="section-symbol symbol-moss"><Apple aria-hidden="true" size={18} /></span>
-          <h2 id="health-title">Diet & health</h2>
+          <h2 id="health-title">Diet</h2>
           <p>A gentle glance at what your body received.</p>
         </div>
+      </div>
+      <div className="diet-summary">
+        <strong>Oatmeal, eggs, greens, water</strong>
+        <span>Nice balance today</span>
       </div>
 
       <div className="health-layout">

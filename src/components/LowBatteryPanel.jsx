@@ -1,4 +1,4 @@
-import { BatteryLow, Heart } from 'lucide-react'
+import { HeartHandshake } from 'lucide-react'
 
 import { getComfortSignal } from '../lib/dashboard.js'
 
@@ -9,11 +9,15 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, onSelectFee
     <section className="panel battery-panel" id="battery" aria-labelledby="battery-title">
       <div className="panel-heading battery-heading">
         <div>
-          <span className="section-symbol symbol-lavender"><BatteryLow aria-hidden="true" size={18} /></span>
-          <h2 id="battery-title">Low battery?</h2>
+          <span className="section-symbol symbol-lavender"><HeartHandshake aria-hidden="true" size={18} /></span>
+          <h2 id="battery-title">Low battery</h2>
           <p>Name what is taking up space.</p>
         </div>
-        <Heart aria-hidden="true" size={23} strokeWidth={1.6} />
+      </div>
+
+      <div className="compact-signal">
+        <strong>{signal.percentage}%</strong>
+        <span>feel this too · demo signal</span>
       </div>
 
       <div className="feeling-options" aria-label="Choose a feeling">

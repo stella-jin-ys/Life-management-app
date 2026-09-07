@@ -1,13 +1,8 @@
 import {
   Apple,
-  BatteryLow,
-  BookHeart,
   ChevronRight,
-  Compass,
   Flag,
-  HeartHandshake,
   LayoutDashboard,
-  LineChart,
   ListTodo,
   Moon,
   NotebookPen,
@@ -16,58 +11,40 @@ import {
   Dumbbell,
   BookOpen,
   Sparkles,
+  SunMedium,
 } from 'lucide-react'
 
-const primaryItems = [
+const navigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'highlights', label: 'Highlights', icon: Sparkles },
-  { id: 'battery', label: 'Low Battery', icon: BatteryLow },
-  { id: 'health', label: 'Diet & Health', icon: Apple },
+  { id: 'health', label: 'Diet', icon: Apple },
+  { id: 'sleeping', label: 'Sleeping', icon: Moon },
+  { id: 'diary', label: 'Diary', icon: NotebookPen },
+  { id: 'tasks', label: 'Tasks', icon: ListTodo },
+  { id: 'study', label: 'Study', icon: BookOpen },
+  { id: 'workout', label: 'Workout', icon: Dumbbell },
   { id: 'goals', label: 'Goals', icon: Flag },
-]
-
-const upcomingItems = [
-  { label: 'Weekly Reflection', icon: BookHeart },
-  { label: 'Mood Trends', icon: LineChart },
-  { label: 'Self-care Library', icon: Compass },
-  { label: 'Community Comfort', icon: HeartHandshake },
-  { label: 'Tasks', icon: ListTodo },
-  { label: 'Finance', icon: WalletCards },
-  { label: 'Study', icon: BookOpen },
-  { label: 'Workout', icon: Dumbbell },
-  { label: 'Sleeping', icon: Moon },
-  { label: 'Diary', icon: NotebookPen },
-  { label: 'Settings', icon: Settings },
+  { id: 'finance', label: 'Finance', icon: WalletCards },
+  { id: 'settings', label: 'Settings', icon: Settings, divider: true },
 ]
 
 export default function Sidebar({ activeSection, onNavigate, mobile = false }) {
   return (
     <aside className={mobile ? 'navigation-panel' : 'navigation-rail'}>
       <div className="brand-lockup">
-        <span className="brand-mark" aria-hidden="true"><span /><span /></span>
+        <span className="brand-mark" aria-hidden="true"><SunMedium size={28} strokeWidth={1.7} /></span>
         <span><strong>Life</strong><small>management</small></span>
       </div>
 
       <nav aria-label={mobile ? 'Mobile navigation' : 'Dashboard'}>
         <div className="nav-group">
-          {primaryItems.map(({ id, label, icon: Icon }) => (
-            <button className="navigation-link" type="button" key={id}
+          {navigationItems.map(({ id, label, icon: Icon, divider }) => (
+            <button className={`navigation-link${divider ? ' navigation-divider' : ''}`} type="button" key={label}
               aria-current={activeSection === id ? 'page' : undefined}
-              onClick={() => onNavigate(id)}>
+              onClick={() => id && onNavigate(id)}>
               <Icon aria-hidden="true" size={19} strokeWidth={1.8} />
               <span>{label}</span>
               <ChevronRight className="nav-arrow" aria-hidden="true" size={15} />
-            </button>
-          ))}
-        </div>
-
-        <div className="upcoming-group">
-          <p className="nav-caption">A little further ahead</p>
-          {upcomingItems.map(({ label, icon: Icon }) => (
-            <button className="upcoming-link" type="button" key={label} disabled>
-              <Icon aria-hidden="true" size={17} strokeWidth={1.7} />
-              <span>{label}</span>
-              <small>Coming soon</small>
             </button>
           ))}
         </div>

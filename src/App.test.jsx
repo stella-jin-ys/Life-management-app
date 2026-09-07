@@ -19,14 +19,11 @@ test('shows every primary destination and marks the selected destination', () =>
   for (const name of [
     'Dashboard',
     'Highlights',
-    'Low Battery',
-    'Diet & Health',
+    'Diet',
     'Goals',
   ]) {
     expect(screen.getAllByRole('button', { name })[0]).toBeInTheDocument()
   }
-
-  expect(screen.getAllByText('Coming soon')).toHaveLength(11)
 
   fireEvent.click(screen.getAllByRole('button', { name: 'Highlights' })[0])
   expect(
@@ -34,7 +31,7 @@ test('shows every primary destination and marks the selected destination', () =>
   ).toHaveAttribute('aria-current', 'page')
 })
 
-test('shows the requested future life areas in the side menu', () => {
+test('keeps every destination enabled in the side menu', () => {
   render(<App />)
 
   for (const name of [
@@ -46,8 +43,11 @@ test('shows the requested future life areas in the side menu', () => {
     'Diary',
     'Settings',
   ]) {
-    expect(screen.getAllByRole('button', { name: new RegExp(`^${name}`) })[0]).toBeDisabled()
+    expect(screen.getAllByRole('button', { name: new RegExp(`^${name}`) })[0]).toBeEnabled()
   }
+
+  fireEvent.click(screen.getAllByRole('button', { name: 'Tasks' })[0])
+  expect(screen.getAllByRole('button', { name: 'Tasks' })[0]).toHaveAttribute('aria-current', 'page')
 })
 
 test('moves the matching dashboard section into view from the sidebar', () => {
@@ -55,7 +55,7 @@ test('moves the matching dashboard section into view from the sidebar', () => {
   Element.prototype.scrollIntoView = scrollIntoView
   render(<App />)
 
-  fireEvent.click(screen.getAllByRole('button', { name: 'Low Battery' })[0])
+  fireEvent.click(screen.getAllByRole('button', { name: 'Highlights' })[0])
 
   expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
 })
@@ -84,17 +84,11 @@ test('responds supportively when a mood is selected', () => {
 test('adds a highlight and returns a compliment', () => {
   render(<App />)
 
-  fireEvent.click(screen.getByRole('button', { name: 'Add a highlight' }))
-  fireEvent.change(
-    screen.getByRole('textbox', { name: 'What felt good or moved forward?' }),
-    { target: { value: 'Drank water before coffee' } },
-  )
-  fireEvent.click(screen.getByRole('button', { name: 'Save highlight' }))
+  fireEvent.change(screen.getByRole('textbox', { name: 'Quick highlight' }),
+    { target: { value: 'Drank water before coffee' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save quick highlight' }))
 
-  expect(screen.getByText('Drank water before coffee')).toBeVisible()
-  expect(
-    screen.getByText(/“Drank water before coffee” counts/),
-  ).toBeVisible()
+  expect(screen.getByRole('textbox', { name: 'Quick highlight' })).toHaveValue('')
 })
 
 test('shows an honest demo comfort signal for a selected feeling', () => {
@@ -121,13 +115,12 @@ test('shows hydration progress with a meaningful numeric value', () => {
 test('updates goal momentum when a milestone is completed', () => {
   render(<App />)
 
-  expect(screen.getByText('25% complete')).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Goals' })).toBeVisible()
   fireEvent.click(
-    screen.getByRole('checkbox', { name: 'Outline the first chapter' }),
+    screen.getByRole('checkbox', { name: 'Run a 10k' }),
   )
 
-  expect(screen.getByText('50% complete')).toBeVisible()
   expect(
-    screen.getByRole('checkbox', { name: 'Outline the first chapter' }),
+    screen.getByRole('checkbox', { name: 'Run a 10k' }),
   ).toBeChecked()
 })

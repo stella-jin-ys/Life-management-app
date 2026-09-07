@@ -9,7 +9,7 @@ export const feelings = [
   {
     id: 'drained',
     label: 'Drained',
-    percentage: 61,
+    percentage: 58,
     affirmation: 'Rest is part of carrying on. You do not have to earn a pause.',
   },
   {
@@ -56,12 +56,10 @@ export const healthMetrics = [
 ]
 
 export const initialGoal = {
-  title: 'Write the story that has been waiting',
-  why: 'Make a little room for the idea every week.',
+  title: 'A little more of what matters',
+  why: 'Small actions that keep your priorities close.',
   milestones: [
-    { id: 1, label: 'Choose the central idea', complete: true },
-    { id: 2, label: 'Outline the first chapter', complete: false },
-    { id: 3, label: 'Write for twenty quiet minutes', complete: false },
-    { id: 4, label: 'Share one page with a friend', complete: false },
+    { id: 1, label: 'Read 12 books', complete: true },
+    { id: 2, label: 'Run a 10k', complete: false },
   ],
 }
