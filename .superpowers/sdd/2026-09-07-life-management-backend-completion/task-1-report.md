@@ -178,3 +178,62 @@ No alternative verification route is available in this environment. The exact ex
 ### Fix-round commit
 
 - `a92b4df02516a186905566443496defe5a887322` — `docs: append task 1 fix round 2 report`.
+
+## Fix round 3 report
+
+Date: 2026-09-07
+Scope: one final safe toolchain attempt only. No package scripts, application code, frontend configuration, or destructive cleanup were changed.
+
+### Deno alternative
+
+1. `npm exec --yes deno -- --version` — PASS, exit 0. Exact output:
+
+   ```text
+   deno 2.9.6 (stable, release, x86_64-apple-darwin)
+   v8 15.0.245.2-rusty
+   typescript 6.0.3
+   ```
+
+2. `npm exec --yes deno -- test --allow-env supabase/functions/generate-compliment/compliment_test.ts` — PASS, exit 0. Exact test output summary:
+
+   ```text
+   Check supabase/functions/generate-compliment/compliment_test.ts
+   running 5 tests from ./supabase/functions/generate-compliment/compliment_test.ts
+   ok | 5 passed | 0 failed (57ms)
+   ```
+
+   This verifies the function tests through the npm-provided runtime without changing `package.json` or weakening `npm run test:functions`.
+
+### Supabase final attempt
+
+3. `npx supabase status` (clean status check) — FAIL, exit 1. Exact output:
+
+   ```text
+   WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
+   {"linked_project":null,"_tag":"Error","error":{"code":"LegacyStatusDbInspectError","message":"failed to inspect container health: Error response from daemon: No such container: supabase_db_life-management"}}
+   ```
+
+4. `npx supabase start` (single final cached-image attempt) — BLOCKED. Exact captured output before stopping the stalled process:
+
+   ```text
+   WARN: config section [inbucket] is deprecated. Please use [local_smtp] instead.
+   v1.70.3: Pulling from supabase/storage-api
+   e6f31ffc071e: Already exists
+   5f05fbb94ac9: Pulling fs layer
+   dbd229483e61: Pulling fs layer
+   f4e2bfbd8bcd: Pulling fs layer
+   521c5280947c: Pulling fs layer
+   3f609ae12598: Pulling fs layer
+   ... image layers downloaded ...
+   5f05fbb94ac9: Pull complete
+   ```
+
+   The process did not reach a healthy stack within the bounded attempt and was stopped. No project database container appeared, no anon key was available, and `.env.local` remains unpopulated. No destructive cleanup was used.
+
+### Fix-round conclusion
+
+The Deno/function-test blocker is resolved through a safe npm-provided runtime route: 5/5 function tests pass. The local backend baseline remains externally blocked: the existing Supabase CLI is available and Docker has cached images, but `supabase status` finds no `supabase_db_life-management` container and the final startup attempt stalls during image startup. Consequently `db:reset`, `.env.local` population, and Auth-dependent E2E verification remain unavailable. No broad frontend suite/build was rerun because no files outside this report changed.
+
+### Fix-round commit
+
+- Pending fix-round 3 report commit (recorded after commit).
