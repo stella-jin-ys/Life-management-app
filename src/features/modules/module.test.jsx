@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 const supabaseState = vi.hoisted(() => ({ client: null }))
 
@@ -13,12 +14,22 @@ import {
   createFinanceEntry,
   createStudyLog,
   createTask,
+  deleteTask,
+  getDiaryEntry,
+  listFinanceEntries,
   listSleepEntries,
+  listStudyLogs,
+  listTasks,
+  listWorkoutEntries,
+  toggleTask,
+  upsertDiaryEntry,
+  upsertSleepEntry,
   upsertWorkoutEntry,
   validateModuleValues,
 } from './moduleApi.js'
 import useModuleData from './useModuleData.js'
 import ModulePage from './ModulePage.jsx'
+import DemoRoutes from './DemoRoutes.jsx'
 
 function createFakeClient() {
   const requests = []
@@ -33,7 +44,10 @@ function createFakeClient() {
       order() { return chain },
       insert(payload) { request.action = 'insert'; request.payload = payload; return chain },
       upsert(payload, options) { request.action = 'upsert'; request.payload = payload; request.options = options; return chain },
+      update(payload) { request.action = 'update'; request.payload = payload; return chain },
+      delete() { request.action = 'delete'; return chain },
       single() { requests.push(request); return Promise.resolve({ data: { id: 'saved-entry', ...request.payload }, error: null }) },
+      maybeSingle() { requests.push(request); return Promise.resolve({ data: null, error: null }) },
       then(resolve, reject) { requests.push(request); return Promise.resolve({ data: [], error: null }).then(resolve, reject) },
     }
     return chain
@@ -95,6 +109,32 @@ describe('supporting module persistence', () => {
       filters: [['user_id', 'user-1'], ['entry_date', '2026-09-01'], ['entry_date', '2026-09-07']],
     }))
   })
+
+  test('covers task mutations, daily upserts, and every remaining user-scoped list', async () => {
+    supabaseState.client = createFakeClient()
+
+    await listTasks('user-1')
+    await toggleTask('task-1', true)
+    await deleteTask('task-1')
+    await listStudyLogs('user-1', 'UTC')
+    await listWorkoutEntries('user-1', '2026-09-01', '2026-09-07')
+    await upsertSleepEntry('user-1', '2026-09-07', 480)
+    await getDiaryEntry('user-1', '2026-09-07', 'UTC')
+    await upsertDiaryEntry('user-1', '2026-09-07', 'A quiet day.', 'UTC')
+    await listFinanceEntries('user-1', '2026-09-01', '2026-09-07')
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({ table: 'tasks', action: 'select', filters: [['user_id', 'user-1']] }),
+      expect.objectContaining({ table: 'tasks', action: 'update', payload: { is_complete: true }, filters: [['id', 'task-1']] }),
+      expect.objectContaining({ table: 'tasks', action: 'delete', filters: [['id', 'task-1']] }),
+      expect.objectContaining({ table: 'study_logs', action: 'select', filters: expect.arrayContaining([['user_id', 'user-1']]) }),
+      expect.objectContaining({ table: 'workout_entries', action: 'select', filters: [['user_id', 'user-1'], ['entry_date', '2026-09-01'], ['entry_date', '2026-09-07']] }),
+      expect.objectContaining({ table: 'sleep_entries', action: 'upsert', payload: { user_id: 'user-1', entry_date: '2026-09-07', minutes: 480 }, options: { onConflict: 'user_id,entry_date' } }),
+      expect.objectContaining({ table: 'diary_entries', action: 'select', filters: [['user_id', 'user-1'], ['entry_date', '2026-09-07']] }),
+      expect.objectContaining({ table: 'diary_entries', action: 'upsert', payload: { user_id: 'user-1', entry_date: '2026-09-07', content: 'A quiet day.' }, options: { onConflict: 'user_id,entry_date' } }),
+      expect.objectContaining({ table: 'finance_entries', action: 'select', filters: [['user_id', 'user-1'], ['entry_date', '2026-09-01'], ['entry_date', '2026-09-07']] }),
+    ]))
+  })
 })
 
 describe('supporting module state', () => {
@@ -132,5 +172,38 @@ describe('supporting module forms', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Enter a valid amount.')
     expect(screen.getByLabelText('Label')).toHaveValue('Lunch')
     expect(screen.getByLabelText('Amount')).toHaveValue('twelve')
+  })
+
+  test('keeps typed finance fields after a rejected persistence request', async () => {
+    const client = createFakeClient()
+    const originalFrom = client.from
+    client.from = vi.fn((table) => {
+      const chain = originalFrom(table)
+      if (table === 'finance_entries') chain.single = () => Promise.resolve({ data: null, error: new Error('offline') })
+      return chain
+    })
+    supabaseState.client = client
+    render(<ModulePage module="finance" user={{ id: 'user-1' }} profile={{ timezone: 'UTC' }} />)
+
+    fireEvent.change(screen.getByLabelText('Label'), { target: { value: 'Lunch' } })
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12.50' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save finance entry' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('We could not save this entry. Please try again.')
+    expect(screen.getByLabelText('Label')).toHaveValue('Lunch')
+    expect(screen.getByLabelText('Amount')).toHaveValue('12.50')
+  })
+})
+
+describe('demo module routes', () => {
+  test('renders a local-only Tasks page at the demo module route', async () => {
+    render(<MemoryRouter initialEntries={['/tasks?demo']}><DemoRoutes /></MemoryRouter>)
+
+    fireEvent.change(screen.getByLabelText('Task title'), { target: { value: 'Call Mum' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save task' }))
+
+    expect(screen.getByRole('heading', { name: 'Tasks' })).toBeVisible()
+    await waitFor(() => expect(screen.getByText('Call Mum')).toBeVisible())
+    expect(supabaseState.client).toBeNull()
   })
 })

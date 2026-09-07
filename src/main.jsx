@@ -8,6 +8,7 @@ import AuthPage from './features/auth/AuthPage.jsx'
 import { AuthProvider, useAuth } from './features/auth/AuthProvider.jsx'
 import { ProtectedRoute, PublicOnlyRoute } from './features/auth/ProtectedRoute.jsx'
 import ResetPasswordPage from './features/auth/ResetPasswordPage.jsx'
+import DemoRoutes from './features/modules/DemoRoutes.jsx'
 import ModulePage from './features/modules/ModulePage.jsx'
 import './styles.css'
 
@@ -80,7 +81,7 @@ const demoMode = import.meta.env.VITE_DEMO_MODE === 'true' || (import.meta.env.D
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      {demoMode ? <App /> : <AppRoutes />}
+      {demoMode ? <DemoRoutes /> : <AppRoutes />}
     </BrowserRouter>
   </React.StrictMode>,
 )
