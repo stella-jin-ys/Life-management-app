@@ -113,3 +113,61 @@ No migration, RLS policy, secret, or environment file was changed. `Sidebar.jsx`
 ## Commit
 
 - `7cf84ec8b731f16b3532dbf56930e00970040ea5` — `feat: add profile settings persistence`
+
+## Fix round 1: password recovery routing
+
+Date: 2026-09-07
+
+### Root cause
+
+The original Settings-flow change placed `/reset-password` below `PublicOnlyRoute`. Supabase sends a `PASSWORD_RECOVERY` auth event with a session when a user returns on a recovery link. Since the provider discarded the event and `PublicOnlyRoute` treated every session alike, it redirected that recovery session to `/` before `ResetPasswordPage` could render.
+
+`requestPasswordReset` was already correct: it sends the user to `${window.location.origin}/reset-password`. No reset-request URL or password-update API behavior changed in this round. Supabase documents `PASSWORD_RECOVERY` as the event used to show the password-update UI after a recovery redirect: <https://supabase.com/docs/reference/javascript/auth-onauthstatechange>.
+
+### Implementation
+
+- `AuthProvider` now retains `isPasswordRecovery` only after a `PASSWORD_RECOVERY` event. A subsequent `SIGNED_IN` or `SIGNED_OUT` clears it.
+- `PublicOnlyRoute` accepts `allowPasswordRecovery` (false by default). A session can pass only when both that opt-in and `isPasswordRecovery` are true.
+- `main.jsx` uses that opt-in only around `/reset-password`; login, signup, and forgot-password remain under the unchanged default guard.
+- No route becomes generally authenticated/public, and no database, RLS, environment, or secret handling changes.
+- The Settings regression test covers a rejected `updateProfile` request and asserts the user's edited display name and timezone remain in the inputs.
+
+### Tests and verification
+
+1. Red recovery-route reproduction before the implementation:
+
+   ```text
+   npm run test:run -- src/features/auth/auth.test.jsx src/features/settings/settings.test.jsx
+   Test Files  1 failed | 1 passed (2)
+   Tests  1 failed | 14 passed (15)
+   ```
+
+   A recovery session on `/reset-password` rendered `Private route` instead of the `Choose a new password` form. The new Settings rejected-save test passed against the existing error path.
+
+2. Focused green verification after the implementation:
+
+   ```text
+   npm run test:run -- src/features/auth/auth.test.jsx src/features/settings/settings.test.jsx
+   Test Files  2 passed (2)
+   Tests  15 passed (15)
+   ```
+
+   The route tests now prove that a regular session is redirected away from reset-password, a `PASSWORD_RECOVERY` session reaches the reset form, and the three ordinary authenticated routes still redirect.
+
+3. Scoped frontend suite and build:
+
+   ```text
+   npm run test:run -- src/App.test.jsx src/features/auth/auth.test.jsx src/features/auth/authApi.test.js src/features/settings/settings.test.jsx
+   Test Files  4 passed (4)
+   Tests  27 passed (27)
+
+   npm run build
+   ✓ 1648 modules transformed.
+   ✓ built in 3.38s
+   ```
+
+   The test process emitted the existing React Router future-flag warning only; there were no failures. `git diff --check` returned no output before commit.
+
+### Fix commit
+
+- `c9b8f334550020244b6ce2348526f8b4e0d229d2` — `fix: allow password recovery reset flow`
