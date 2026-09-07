@@ -40,10 +40,11 @@ Create a Supabase project, apply `supabase/migrations/202609010001_initial_schem
 ## Verify
 
 ```bash
-npm run test:run
+npm run test:run -- --exclude '.worktrees/**'
 npm run build
-npm run test:functions
+npm run db:reset
 npm run test:db
+npm run test:functions
 npm run test:e2e
 ```
 
