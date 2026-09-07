@@ -277,4 +277,4 @@ The Deno command interface is now genuinely runnable through `npm run test:funct
 
 ### Fix-round commit
 
-- Pending commit for the package-script correction and this report.
+- `b274e57d2b02723b01adc379c98b59573e73cf26` — `chore: make function tests runnable`.
