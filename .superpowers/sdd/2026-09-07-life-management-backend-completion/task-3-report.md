@@ -46,3 +46,34 @@ Local Supabase is not running. `supabase test db` reports `connect ECONNREFUSED 
 ## Commit hashes
 
 - Implementation: `2bf926fa673505b0a033af168adcebab82da5c9f` — `feat: persist core dashboard workflows`
+
+## Fix round 1: persistence sequencing and rollback correctness
+
+### Findings addressed
+
+- Added per-resource mutation queues and monotonically increasing versions in `useDashboardData`. Mood, feeling, health, and each milestone now submit sequentially. A stale failure cannot overwrite newer UI intent, and serialization prevents an older request from reaching Supabase after a newer request.
+- Added confirmed-state tracking for each persisted dashboard value. A latest failure restores the last server-confirmed mood, feeling/signal, health metrics, or individual milestone without rolling back unrelated newer changes.
+- Resolved the dashboard timezone once per hook render. The same profile timezone, or the same browser IANA fallback, is supplied to `loadDashboard`, `saveMood`, and `saveHealth`.
+- Changed optimistic highlight temporary IDs to use `crypto.randomUUID()` with a timestamp-and-random fallback.
+- Made `saveMilestone` request and require the updated record (`select('id').single()`) after filtering by its ID. This turns an RLS-denied/no-match update into a rejected mutation that rolls back visibly; ownership remains enforced by the existing milestone-through-goal RLS policy.
+
+### Regression coverage
+
+- Added failure rollback tests for feeling/signal and milestone persistence.
+- Added rapid consecutive mutation tests for mood, feeling, health, and a single milestone. Each asserts that the second save is not issued until the first settles and that the latest optimistic state wins after an older failure or success.
+- Added a non-UTC browser-timezone fallback test that proves loading and both daily save paths use the same `Pacific/Auckland` value.
+- Added a fake Supabase test that proves `saveMilestone` filters the requested record and requests its returned ID.
+
+### Fix-round commands and results
+
+| Command | Result |
+| --- | --- |
+| `npm run test:run -- src/features/dashboard/useDashboardData.test.jsx src/lib/lifeApi.test.js` (red) | Failed as expected: 4 serialization tests observed concurrent requests; milestone test observed no selected record. |
+| Same targeted command (green) | Passed: 2 files, 16 tests. |
+| `npm run test:run -- --exclude '.worktrees/**'` | Passed: 6 files, 36 tests. Existing stderr warnings remain from GoTrue duplicate clients and React Router v7 future flags. |
+| `npm run build` | Passed: Vite production build completed. |
+| `git diff --check` | Passed with no whitespace errors. |
+
+### Fix-round commit
+
+- `2df549b1b09672594f01e7e0992b6367441264a3` — `fix: serialize dashboard persistence mutations`
