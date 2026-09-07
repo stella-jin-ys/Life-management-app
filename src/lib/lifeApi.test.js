@@ -1,0 +1,172 @@
+import { afterEach, describe, expect, test, vi } from 'vitest'
+
+const supabaseState = vi.hoisted(() => ({ client: null }))
+
+vi.mock('./supabase/client.js', () => ({
+  get supabase() {
+    return supabaseState.client
+  },
+}))
+
+import {
+  createHighlight,
+  loadDashboard,
+  saveFeeling,
+  saveHealth,
+  saveMood,
+} from './lifeApi.js'
+import { localDate } from '../features/dashboard/date.js'
+
+function createFakeClient({ responses = {}, functionResponse = {} } = {}) {
+  const requests = []
+
+  function resultFor(request) {
+    const result = responses[`${request.table}:${request.action}`]
+    return typeof result === 'function' ? result(request) : result || { data: null, error: null }
+  }
+
+  function createQuery(table) {
+    const request = { table, action: 'select', filters: [], payload: undefined, options: undefined }
+    const query = {
+      select() {
+        if (request.action === 'select') request.action = 'select'
+        return query
+      },
+      eq(column, value) {
+        request.filters.push([column, value])
+        return query
+      },
+      order() { return query },
+      limit() { return query },
+      insert(payload) {
+        request.action = 'insert'
+        request.payload = payload
+        return query
+      },
+      upsert(payload, options) {
+        request.action = 'upsert'
+        request.payload = payload
+        request.options = options
+        return query
+      },
+      update(payload) {
+        request.action = 'update'
+        request.payload = payload
+        return query
+      },
+      maybeSingle() {
+        requests.push(request)
+        return Promise.resolve(resultFor(request))
+      },
+      single() {
+        requests.push(request)
+        return Promise.resolve(resultFor(request))
+      },
+      then(resolve, reject) {
+        requests.push(request)
+        return Promise.resolve(resultFor(request)).then(resolve, reject)
+      },
+    }
+    return query
+  }
+
+  return {
+    requests,
+    from: vi.fn((table) => createQuery(table)),
+    rpc: vi.fn(() => Promise.resolve(responses.rpc || { data: [], error: null })),
+    functions: { invoke: vi.fn(() => Promise.resolve({ data: functionResponse })) },
+  }
+}
+
+afterEach(() => {
+  supabaseState.client = null
+  vi.useRealTimers()
+})
+
+describe('localDate', () => {
+  test('uses the profile IANA timezone when deriving a local day', () => {
+    const instant = new Date('2026-01-01T00:30:00.000Z')
+
+    expect(localDate('America/Los_Angeles', instant)).toBe('2025-12-31')
+  })
+})
+
+describe('dashboard persistence', () => {
+  test('loads core rows with the authenticated user and the profile local date', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T00:30:00.000Z'))
+    supabaseState.client = createFakeClient({
+      responses: {
+        'mood_entries:select': { data: { mood: 'bright' }, error: null },
+        'highlights:select': { data: [], error: null },
+        'health_entries:select': {
+          data: { hydration_glasses: 4, nourishing_meals: 2, sleep_minutes: 420, movement_minutes: 30 },
+          error: null,
+        },
+        'goals:select': { data: [{ id: 'goal-1', title: 'Keep going', why: 'Because it matters', milestones: [] }], error: null },
+        rpc: { data: [{ status: 'insufficient_data', percentage: null, total_count: null }], error: null },
+      },
+    })
+
+    const dashboard = await loadDashboard('user-1', 'America/Los_Angeles')
+
+    expect(dashboard.entryDate).toBe('2025-12-31')
+    expect(dashboard.signal.percentage).toBeNull()
+    for (const request of supabaseState.client.requests.filter(({ table }) =>
+      ['mood_entries', 'highlights', 'health_entries', 'goals'].includes(table))) {
+      expect(request.filters).toContainEqual(['user_id', 'user-1'])
+    }
+    for (const request of supabaseState.client.requests.filter(({ table }) =>
+      ['mood_entries', 'health_entries'].includes(table))) {
+      expect(request.filters).toContainEqual(['entry_date', '2025-12-31'])
+    }
+  })
+
+  test('includes the authenticated user and local date in daily saves', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-01-01T00:30:00.000Z'))
+    supabaseState.client = createFakeClient()
+
+    await saveMood('user-1', 'steady', 'America/Los_Angeles')
+    await saveHealth('user-1', [
+      { id: 'water', value: 6 },
+      { id: 'meals', value: 3 },
+      { id: 'sleep', value: 7.5 },
+      { id: 'movement', value: 40 },
+    ], 'America/Los_Angeles')
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'mood_entries',
+        action: 'upsert',
+        payload: expect.objectContaining({ user_id: 'user-1', entry_date: '2025-12-31', mood: 'steady' }),
+      }),
+      expect.objectContaining({
+        table: 'health_entries',
+        action: 'upsert',
+        payload: expect.objectContaining({ user_id: 'user-1', entry_date: '2025-12-31' }),
+      }),
+    ]))
+  })
+
+  test('scopes non-daily saves and fallback compliment writes to the authenticated user', async () => {
+    supabaseState.client = createFakeClient({
+      responses: {
+        'highlights:insert': {
+          data: { id: 'highlight-1', content: 'Called a friend', created_at: '2026-01-01T09:00:00.000Z' },
+          error: null,
+        },
+      },
+    })
+    supabaseState.client.functions.invoke.mockResolvedValue({ data: null })
+
+    await saveFeeling('user-1', 'lonely')
+    await createHighlight('user-1', 'Called a friend')
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({ table: 'feeling_checkins', action: 'insert', payload: { user_id: 'user-1', feeling: 'lonely' } }),
+      expect.objectContaining({ table: 'highlights', action: 'insert', payload: { user_id: 'user-1', content: 'Called a friend' } }),
+      expect.objectContaining({ table: 'highlights', action: 'update', filters: expect.arrayContaining([['user_id', 'user-1']]) }),
+    ]))
+  })
+})

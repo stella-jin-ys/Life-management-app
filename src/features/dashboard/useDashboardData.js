@@ -13,6 +13,16 @@ const demoState = {
   signal: getComfortSignal(feelings[0].id),
 }
 
+const retryMessage = 'We could not save that change. Please try again.'
+
+function savedSignal(feeling, signal) {
+  return {
+    ...getComfortSignal(feeling),
+    ...signal,
+    percentage: signal?.status === 'available' ? signal.percentage : null,
+  }
+}
+
 export default function useDashboardData(user, profile) {
   const [state, setState] = useState(demoState)
   const [loading, setLoading] = useState(Boolean(user))
@@ -32,8 +42,16 @@ export default function useDashboardData(user, profile) {
     return () => { active = false }
   }, [user?.id, profile?.timezone])
 
-  async function persist(action) {
-    try { await action(); return true } catch { setError('That note could not be saved. Please try again.'); return false }
+  async function persist(action, rollback) {
+    try {
+      await action()
+      setError('')
+      return true
+    } catch {
+      rollback?.()
+      setError(retryMessage)
+      return false
+    }
   }
 
   return {
@@ -41,42 +59,68 @@ export default function useDashboardData(user, profile) {
     loading,
     error,
     selectMood: (mood) => {
+      const previousMood = state.selectedMood
       setState((current) => ({ ...current, selectedMood: mood }))
-      if (user) persist(() => saveMood(user.id, mood, profile?.timezone || 'UTC'))
+      if (user) persist(
+        () => saveMood(user.id, mood, profile?.timezone || 'UTC'),
+        () => setState((current) => ({ ...current, selectedMood: previousMood })),
+      )
     },
     selectFeeling: (feeling) => {
+      const previousFeeling = state.selectedFeeling
+      const previousSignal = state.signal
       setState((current) => ({ ...current, selectedFeeling: feeling }))
       if (user) persist(async () => {
         const signal = await saveFeeling(user.id, feeling)
-        if (signal) setState((current) => ({ ...current, signal: { ...getComfortSignal(feeling), ...signal } }))
-      })
+        if (signal) setState((current) => ({ ...current, signal: savedSignal(feeling, signal) }))
+      }, () => setState((current) => ({ ...current, selectedFeeling: previousFeeling, signal: previousSignal })))
       else setState((current) => ({ ...current, signal: getComfortSignal(feeling) }))
     },
     addHighlight: (content) => {
       if (!user) {
-        setState((current) => ({ ...current, highlights: [{ id: current.highlights.length + 1, entry: content, compliment: `“${content}” counts. You noticed what helped, and that kind of attention builds a life you can feel.`, time: 'Now' }, ...current.highlights] }))
+        setState((current) => ({ ...current, highlights: [{ id: current.highlights.length + 1, entry: content, compliment: `“${content}” counts. You noticed what helped, and that kind of attention builds a life you can feel.`, complimentStatus: 'fallback', time: 'Now' }, ...current.highlights] }))
         return
       }
-      return (async () => {
-        try {
-          const saved = await createHighlight(user.id, content)
-          setState((current) => ({ ...current, highlights: [saved, ...current.highlights] }))
-        } catch (saveError) {
-          setError('That highlight could not be saved. Please try again.')
+      const temporaryId = `pending-${Date.now()}`
+      const optimistic = {
+        id: temporaryId,
+        entry: content,
+        compliment: `“${content}” counts. You noticed what helped, and that kind of attention builds a life you can feel.`,
+        complimentStatus: 'pending',
+        time: 'Now',
+      }
+      setState((current) => ({ ...current, highlights: [optimistic, ...current.highlights] }))
+      return createHighlight(user.id, content)
+        .then((saved) => {
+          setState((current) => ({ ...current, highlights: current.highlights.map((highlight) =>
+            highlight.id === temporaryId ? saved : highlight) }))
+          setError('')
+          return saved
+        })
+        .catch((saveError) => {
+          setState((current) => ({ ...current, highlights: current.highlights.filter(({ id }) => id !== temporaryId) }))
+          setError(retryMessage)
           throw saveError
-        }
-      })()
+        })
     },
     updateMetric: async (id, delta) => {
-      const nextMetrics = state.metrics.map((metric) => metric.id === id ? { ...metric, value: Math.max(0, Number((metric.value + delta).toFixed(1))) } : metric)
+      const previousMetrics = state.metrics
+      const nextMetrics = previousMetrics.map((metric) => metric.id === id ? { ...metric, value: Math.max(0, Number((metric.value + delta).toFixed(1))) } : metric)
       setState((current) => ({ ...current, metrics: nextMetrics }))
-      if (user) await persist(() => saveHealth(user.id, nextMetrics, profile?.timezone || 'UTC'))
+      if (user) await persist(
+        () => saveHealth(user.id, nextMetrics, profile?.timezone || 'UTC'),
+        () => setState((current) => ({ ...current, metrics: previousMetrics })),
+      )
     },
     toggleMilestone: async (id) => {
-      const current = state.goal.milestones.find((milestone) => milestone.id === id)
+      const previousGoal = state.goal
+      const current = previousGoal.milestones.find((milestone) => milestone.id === id)
       const complete = !current.complete
       setState((currentState) => ({ ...currentState, goal: { ...currentState.goal, milestones: currentState.goal.milestones.map((milestone) => milestone.id === id ? { ...milestone, complete } : milestone) } }))
-      if (user) await persist(() => saveMilestone(id, complete))
+      if (user) await persist(
+        () => saveMilestone(id, complete),
+        () => setState((currentState) => ({ ...currentState, goal: previousGoal })),
+      )
     },
   }
 }

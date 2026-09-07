@@ -19,7 +19,7 @@ export default function HighlightsPanel({ onAddHighlight }) {
       setEntry('')
       setError('')
     } catch {
-      setError('That highlight could not be saved. Please try again.')
+      // The dashboard-level retry message is shown while the input stays intact.
     } finally {
       setSaving(false)
     }

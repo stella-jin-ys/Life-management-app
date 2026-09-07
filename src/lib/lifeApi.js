@@ -1,16 +1,15 @@
 import { feelings, healthMetrics, initialGoal, moods } from '../data/demoData.js'
+import { localDate } from '../features/dashboard/date.js'
 import { getComfortSignal } from './dashboard.js'
 import { supabase } from './supabase/client.js'
 
 const defaultHealth = { hydration_glasses: 5, nourishing_meals: 2, sleep_minutes: 432, movement_minutes: 24 }
 
+export { localDate }
+
 function requireClient() {
   if (!supabase) throw new Error('Supabase browser configuration is missing')
   return supabase
-}
-
-export function localDate(timezone = 'UTC') {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date())
 }
 
 function timeLabel(value) {
@@ -93,7 +92,7 @@ export async function loadDashboard(userId, timezone = 'UTC') {
     metrics: mapHealth(health),
     goal: mapGoal(goalRow),
     signal: serverSignal ? {
-      percentage: serverSignal.percentage,
+      percentage: serverSignal.status === 'available' ? serverSignal.percentage : null,
       affirmation: getComfortSignal('drained').affirmation,
       label: feelings[0].label,
       totalCount: serverSignal.total_count,
@@ -131,7 +130,8 @@ export async function createHighlight(userId, content) {
     if (compliment?.compliment) return { ...saved, compliment: compliment.compliment, complimentStatus: compliment.status || 'complete' }
   } catch { /* store the same safe fallback when the local function is unavailable */ }
   const fallback = fallbackCompliment(content)
-  await client.from('highlights').update({ compliment: fallback, compliment_status: 'fallback' }).eq('id', data.id)
+  await client.from('highlights').update({ compliment: fallback, compliment_status: 'fallback' })
+    .eq('id', data.id).eq('user_id', userId)
   return { ...saved, compliment: fallback, complimentStatus: 'fallback' }
 }
 

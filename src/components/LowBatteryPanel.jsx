@@ -2,6 +2,7 @@ import { HeartHandshake } from 'lucide-react'
 
 
 export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onSelectFeeling }) {
+  const percentage = signal.status === 'available' || !signal.status ? signal.percentage : null
 
   return (
     <section className="panel battery-panel" id="battery" aria-labelledby="battery-title">
@@ -14,8 +15,8 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onS
       </div>
 
       <div className="compact-signal">
-        <strong>{signal.percentage}%</strong>
-        <span>feel this too · demo signal</span>
+        <strong>{percentage == null ? '—' : `${percentage}%`}</strong>
+        <span>{signal.status === 'insufficient_data' ? 'private until there is enough data' : 'feel this too · demo signal'}</span>
       </div>
 
       <div className="feeling-options" aria-label="Choose a feeling">
@@ -26,10 +27,10 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onS
       </div>
 
       <div className="comfort-signal">
-        <div className="battery-meter" aria-label={signal.percentage == null ? 'Shared feeling percentage unavailable' : `${signal.percentage}% shared feeling signal`}>
-          <span style={{ transform: `scaleX(${signal.percentage / 100})` }} />
+        <div className="battery-meter" aria-label={percentage == null ? 'Shared feeling percentage unavailable' : `${percentage}% shared feeling signal`}>
+          <span style={{ transform: `scaleX(${(percentage || 0) / 100})` }} />
         </div>
-        <p className="signal-number"><strong>{signal.percentage == null ? '—' : `${signal.percentage}%`}</strong> {signal.status === 'insufficient_data' ? 'Not enough shared check-ins yet to show a comparison.' : 'of recent check-ins named something similar.'}</p>
+        <p className="signal-number"><strong>{percentage == null ? '—' : `${percentage}%`}</strong> {signal.status === 'insufficient_data' ? 'Not enough shared check-ins yet to show a comparison.' : 'of recent check-ins named something similar.'}</p>
         <p className="signal-label">{signal.status === 'insufficient_data' ? 'Private until there is enough data' : signal.status ? 'Community comfort signal' : 'Demo community signal'}</p>
       </div>
 
