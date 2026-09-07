@@ -49,4 +49,4 @@ The pre-existing untracked file `docs/superpowers/plans/2026-09-07-life-manageme
 
 ## Commit hashes
 
-- Pending Task 1 commit.
+- `e75aa62` — `chore: verify local backend foundation` (initial commit; amended below only to record this hash in the report).
