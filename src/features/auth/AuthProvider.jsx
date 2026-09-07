@@ -14,6 +14,7 @@ async function loadProfile(user) {
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,9 +50,11 @@ export function AuthProvider({ children }) {
     }
 
     restore()
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!active) return
       setSession(nextSession)
+      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true)
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') setIsPasswordRecovery(false)
       window.setTimeout(async () => {
         if (!active) return
         try {
@@ -72,12 +75,13 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     session,
     user: session?.user ?? null,
+    isPasswordRecovery,
     profile,
     loading,
     error,
     refreshProfile,
     signOut: signOutRequest,
-  }), [session, profile, loading, error, refreshProfile])
+  }), [session, isPasswordRecovery, profile, loading, error, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

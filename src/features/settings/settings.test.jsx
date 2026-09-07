@@ -64,4 +64,16 @@ describe('profile settings', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Your settings are saved.')
     expect(settingsMocks.refreshProfile).toHaveBeenCalledTimes(1)
   })
+
+  test('keeps edited values when saving the profile is rejected', async () => {
+    settingsMocks.updateProfile.mockRejectedValue(new Error('offline'))
+    render(<SettingsPage />)
+    fireEvent.change(screen.getByLabelText('Display name'), { target: { value: 'Nova' } })
+    fireEvent.change(screen.getByLabelText('Timezone'), { target: { value: 'America/New_York' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save settings' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('We could not save your settings. Please try again.')
+    expect(screen.getByLabelText('Display name')).toHaveValue('Nova')
+    expect(screen.getByLabelText('Timezone')).toHaveValue('America/New_York')
+  })
 })

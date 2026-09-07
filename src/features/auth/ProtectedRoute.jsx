@@ -8,8 +8,8 @@ export function ProtectedRoute() {
   return session ? <Outlet /> : <Navigate to="/login" replace />
 }
 
-export function PublicOnlyRoute() {
-  const { session, loading } = useAuth()
+export function PublicOnlyRoute({ allowPasswordRecovery = false }) {
+  const { session, loading, isPasswordRecovery } = useAuth()
   if (loading) return <div className="route-loading" role="status">Getting things ready…</div>
-  return session ? <Navigate to="/" replace /> : <Outlet />
+  return session && !(allowPasswordRecovery && isPasswordRecovery) ? <Navigate to="/" replace /> : <Outlet />
 }

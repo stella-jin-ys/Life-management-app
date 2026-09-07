@@ -34,7 +34,7 @@ function renderPage(page) {
   return render(<MemoryRouter initialEntries={[page]}>{page === '/reset-password' ? <ResetPasswordPage /> : <AuthPage mode={page.slice(1) || 'login'} />}</MemoryRouter>)
 }
 
-function createSupabaseClient(session, profiles = []) {
+function createSupabaseClient(session, profiles = [], initialEvent) {
   let profileIndex = 0
   const listener = vi.fn()
   const single = vi.fn(() => Promise.resolve({ data: profiles[profileIndex++] ?? null, error: null }))
@@ -47,6 +47,7 @@ function createSupabaseClient(session, profiles = []) {
         getSession: vi.fn(() => Promise.resolve({ data: { session }, error: null })),
         onAuthStateChange: vi.fn((callback) => {
           listener.mockImplementation(callback)
+          if (initialEvent) callback(initialEvent, session)
           return { data: { subscription: { unsubscribe: vi.fn() } } }
         }),
       },
@@ -78,7 +79,9 @@ function RouteFixture({ initialPath }) {
             <Route path="/login" element={<p>Auth route</p>} />
             <Route path="/signup" element={<p>Auth route</p>} />
             <Route path="/forgot-password" element={<p>Auth route</p>} />
-            <Route path="/reset-password" element={<p>Auth route</p>} />
+          </Route>
+          <Route element={<PublicOnlyRoute allowPasswordRecovery />}>
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<p>Private route</p>} />
@@ -162,7 +165,7 @@ describe('authentication session and routes', () => {
     expect(fake.single).toHaveBeenCalledTimes(2)
   })
 
-  test.each(['/login', '/signup', '/forgot-password', '/reset-password'])(
+  test.each(['/login', '/signup', '/forgot-password'])(
     'redirects a signed-in user away from %s',
     async (path) => {
       const session = { user: { id: 'user-1', email: 'stella@example.test' } }
@@ -174,6 +177,30 @@ describe('authentication session and routes', () => {
       expect(await screen.findByText('Private route')).toBeInTheDocument()
     },
   )
+
+  test('redirects a regular signed-in session away from password reset', async () => {
+    const session = { user: { id: 'user-1', email: 'stella@example.test' } }
+    const fake = createSupabaseClient(session, [{ id: 'user-1', display_name: 'Stella', timezone: 'Europe/Stockholm' }])
+    supabaseState.client = fake.client
+
+    render(<RouteFixture initialPath="/reset-password" />)
+
+    expect(await screen.findByText('Private route')).toBeInTheDocument()
+  })
+
+  test('allows a password recovery session to reach the reset form', async () => {
+    const session = { user: { id: 'user-1', email: 'stella@example.test' } }
+    const fake = createSupabaseClient(
+      session,
+      [{ id: 'user-1', display_name: 'Stella', timezone: 'Europe/Stockholm' }],
+      'PASSWORD_RECOVERY',
+    )
+    supabaseState.client = fake.client
+
+    render(<RouteFixture initialPath="/reset-password" />)
+
+    expect(await screen.findByRole('heading', { name: 'Choose a new password' })).toBeInTheDocument()
+  })
 
   test('sends a signed-out user to login and follows the logout session event', async () => {
     const fake = createSupabaseClient(null)
