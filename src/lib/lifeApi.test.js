@@ -13,6 +13,7 @@ import {
   loadDashboard,
   saveFeeling,
   saveHealth,
+  saveMilestone,
   saveMood,
 } from './lifeApi.js'
 import { localDate } from '../features/dashboard/date.js'
@@ -28,7 +29,8 @@ function createFakeClient({ responses = {}, functionResponse = {} } = {}) {
   function createQuery(table) {
     const request = { table, action: 'select', filters: [], payload: undefined, options: undefined }
     const query = {
-      select() {
+      select(columns) {
+        request.selected = columns
         if (request.action === 'select') request.action = 'select'
         return query
       },
@@ -167,6 +169,22 @@ describe('dashboard persistence', () => {
       expect.objectContaining({ table: 'feeling_checkins', action: 'insert', payload: { user_id: 'user-1', feeling: 'lonely' } }),
       expect.objectContaining({ table: 'highlights', action: 'insert', payload: { user_id: 'user-1', content: 'Called a friend' } }),
       expect.objectContaining({ table: 'highlights', action: 'update', filters: expect.arrayContaining([['user_id', 'user-1']]) }),
+    ]))
+  })
+
+  test('confirms a milestone update is scoped to its requested record', async () => {
+    supabaseState.client = createFakeClient()
+
+    await saveMilestone('milestone-1', true)
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'milestones',
+        action: 'update',
+        selected: 'id',
+        filters: [['id', 'milestone-1']],
+        payload: expect.objectContaining({ is_complete: true }),
+      }),
     ]))
   })
 })

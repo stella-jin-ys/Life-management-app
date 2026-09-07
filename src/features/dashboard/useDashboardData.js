@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { feelings, healthMetrics, initialGoal, initialHighlights, moods } from '../../data/demoData.js'
 import { getComfortSignal } from '../../lib/dashboard.js'
@@ -23,10 +23,19 @@ function savedSignal(feeling, signal) {
   }
 }
 
+function temporaryHighlightId() {
+  const randomId = globalThis.crypto?.randomUUID?.()
+  return `pending-${randomId || `${Date.now()}-${Math.random().toString(36).slice(2)}`}`
+}
+
 export default function useDashboardData(user, profile) {
   const [state, setState] = useState(demoState)
   const [loading, setLoading] = useState(Boolean(user))
   const [error, setError] = useState('')
+  const confirmedState = useRef(demoState)
+  const mutationQueues = useRef(new Map())
+  const mutationVersions = useRef(new Map())
+  const timezone = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
   useEffect(() => {
     if (!user) {
@@ -35,23 +44,34 @@ export default function useDashboardData(user, profile) {
     }
     let active = true
     setLoading(true)
-    loadDashboard(user.id, profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
-      .then((next) => { if (active) { setState(next); setError('') } })
+    loadDashboard(user.id, timezone)
+      .then((next) => { if (active) { confirmedState.current = next; setState(next); setError('') } })
       .catch(() => { if (active) setError('We could not load your latest life notes. Refresh to try again.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [user?.id, profile?.timezone])
+  }, [user?.id, timezone])
 
-  async function persist(action, rollback) {
-    try {
-      await action()
-      setError('')
-      return true
-    } catch {
-      rollback?.()
-      setError(retryMessage)
-      return false
-    }
+  function persist(key, action, onSuccess, rollback) {
+    const version = (mutationVersions.current.get(key) || 0) + 1
+    mutationVersions.current.set(key, version)
+    const previous = mutationQueues.current.get(key) || Promise.resolve()
+    const queued = previous.catch(() => undefined).then(async () => {
+      const isLatest = () => mutationVersions.current.get(key) === version
+      try {
+        const result = await action()
+        onSuccess?.(result, isLatest())
+        if (isLatest()) setError('')
+        return true
+      } catch {
+        if (isLatest()) {
+          rollback?.()
+          setError(retryMessage)
+        }
+        return false
+      }
+    })
+    mutationQueues.current.set(key, queued)
+    return queued
   }
 
   return {
@@ -59,21 +79,31 @@ export default function useDashboardData(user, profile) {
     loading,
     error,
     selectMood: (mood) => {
-      const previousMood = state.selectedMood
       setState((current) => ({ ...current, selectedMood: mood }))
-      if (user) persist(
-        () => saveMood(user.id, mood, profile?.timezone || 'UTC'),
-        () => setState((current) => ({ ...current, selectedMood: previousMood })),
+      if (user) persist('mood',
+        () => saveMood(user.id, mood, timezone),
+        () => { confirmedState.current = { ...confirmedState.current, selectedMood: mood } },
+        () => setState((current) => ({ ...current, selectedMood: confirmedState.current.selectedMood })),
       )
     },
     selectFeeling: (feeling) => {
-      const previousFeeling = state.selectedFeeling
-      const previousSignal = state.signal
       setState((current) => ({ ...current, selectedFeeling: feeling }))
-      if (user) persist(async () => {
+      if (user) persist('feeling', async () => {
         const signal = await saveFeeling(user.id, feeling)
-        if (signal) setState((current) => ({ ...current, signal: savedSignal(feeling, signal) }))
-      }, () => setState((current) => ({ ...current, selectedFeeling: previousFeeling, signal: previousSignal })))
+        return signal ? savedSignal(feeling, signal) : null
+      }, (signal, isLatest) => {
+        const next = {
+          ...confirmedState.current,
+          selectedFeeling: feeling,
+          signal: signal || confirmedState.current.signal,
+        }
+        confirmedState.current = next
+        if (isLatest && signal) setState((current) => ({ ...current, signal }))
+      }, () => setState((current) => ({
+        ...current,
+        selectedFeeling: confirmedState.current.selectedFeeling,
+        signal: confirmedState.current.signal,
+      })))
       else setState((current) => ({ ...current, signal: getComfortSignal(feeling) }))
     },
     addHighlight: (content) => {
@@ -81,7 +111,7 @@ export default function useDashboardData(user, profile) {
         setState((current) => ({ ...current, highlights: [{ id: current.highlights.length + 1, entry: content, compliment: `“${content}” counts. You noticed what helped, and that kind of attention builds a life you can feel.`, complimentStatus: 'fallback', time: 'Now' }, ...current.highlights] }))
         return
       }
-      const temporaryId = `pending-${Date.now()}`
+      const temporaryId = temporaryHighlightId()
       const optimistic = {
         id: temporaryId,
         entry: content,
@@ -104,22 +134,41 @@ export default function useDashboardData(user, profile) {
         })
     },
     updateMetric: async (id, delta) => {
-      const previousMetrics = state.metrics
-      const nextMetrics = previousMetrics.map((metric) => metric.id === id ? { ...metric, value: Math.max(0, Number((metric.value + delta).toFixed(1))) } : metric)
+      const nextMetrics = state.metrics.map((metric) => metric.id === id ? { ...metric, value: Math.max(0, Number((metric.value + delta).toFixed(1))) } : metric)
       setState((current) => ({ ...current, metrics: nextMetrics }))
-      if (user) await persist(
-        () => saveHealth(user.id, nextMetrics, profile?.timezone || 'UTC'),
-        () => setState((current) => ({ ...current, metrics: previousMetrics })),
+      if (user) await persist('health',
+        () => saveHealth(user.id, nextMetrics, timezone),
+        () => { confirmedState.current = { ...confirmedState.current, metrics: nextMetrics } },
+        () => setState((current) => ({ ...current, metrics: confirmedState.current.metrics })),
       )
     },
     toggleMilestone: async (id) => {
-      const previousGoal = state.goal
-      const current = previousGoal.milestones.find((milestone) => milestone.id === id)
+      const current = state.goal.milestones.find((milestone) => milestone.id === id)
       const complete = !current.complete
       setState((currentState) => ({ ...currentState, goal: { ...currentState.goal, milestones: currentState.goal.milestones.map((milestone) => milestone.id === id ? { ...milestone, complete } : milestone) } }))
-      if (user) await persist(
+      if (user) await persist(`milestone:${id}`,
         () => saveMilestone(id, complete),
-        () => setState((currentState) => ({ ...currentState, goal: previousGoal })),
+        () => {
+          confirmedState.current = {
+            ...confirmedState.current,
+            goal: {
+              ...confirmedState.current.goal,
+              milestones: confirmedState.current.goal.milestones.map((milestone) =>
+                milestone.id === id ? { ...milestone, complete } : milestone),
+            },
+          }
+        },
+        () => {
+          const confirmed = confirmedState.current.goal.milestones.find((milestone) => milestone.id === id)
+          setState((currentState) => ({
+            ...currentState,
+            goal: {
+              ...currentState.goal,
+              milestones: currentState.goal.milestones.map((milestone) =>
+                milestone.id === id ? { ...milestone, complete: confirmed.complete } : milestone),
+            },
+          }))
+        },
       )
     },
   }

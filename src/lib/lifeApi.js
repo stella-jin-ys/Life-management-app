@@ -151,6 +151,6 @@ export async function saveHealth(userId, metrics, timezone) {
 export async function saveMilestone(milestoneId, complete) {
   const { error } = await requireClient().from('milestones').update({
     is_complete: complete, completed_at: complete ? new Date().toISOString() : null,
-  }).eq('id', milestoneId)
+  }).eq('id', milestoneId).select('id').single()
   if (error) throw error
 }
