@@ -1,7 +1,7 @@
 import { Plus, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
-export default function HighlightsPanel({ onAddHighlight }) {
+export default function HighlightsPanel({ onAddHighlight, isDemo = false }) {
   const [entry, setEntry] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -12,10 +12,16 @@ export default function HighlightsPanel({ onAddHighlight }) {
       setError('Write one small thing you want to remember.')
       return
     }
+    if (isDemo) {
+      onAddHighlight(entry.trim())
+      setEntry('')
+      setError('')
+      return
+    }
+
     setSaving(true)
     try {
-      const result = onAddHighlight(entry.trim())
-      if (result?.then) await result
+      await onAddHighlight(entry.trim())
       setEntry('')
       setError('')
     } catch {

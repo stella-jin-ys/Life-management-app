@@ -529,6 +529,7 @@ body { padding: 12px; background: #151515; }
 .support-icon { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; color: #66705f; background: #e1e5df; }
 .support-value { display: block; margin-top: 14px; font-family: Fraunces, Georgia, serif; font-size: 1rem; }
 .support-note, .support-copy, .sleep-summary span { display: block; margin-top: 2px; color: var(--muted); font-size: .68rem; }
+.support-empty { display: block; margin-top: 10px; color: var(--muted); font-size: .72rem; line-height: 1.35; }
 .workout-bars { display: flex; width: 100%; height: 38px; align-items: end; justify-content: space-between; gap: 4px; margin-top: 10px; }
 .workout-bars span { width: auto; flex: 1; height: var(--bar-height); border-radius: 2px 2px 0 0; background: #cbd7bd; }
 .workout-bars span:last-child { background: var(--moss); }

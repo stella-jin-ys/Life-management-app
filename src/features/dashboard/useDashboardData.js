@@ -11,6 +11,12 @@ const demoState = {
   metrics: healthMetrics,
   goal: initialGoal,
   signal: getComfortSignal(feelings[0].id),
+  supporting: {
+    tasks: { complete: 3, total: 5 },
+    study: { topic: 'UI design', entryDate: 'demo' },
+    workout: { days: [14, 7, 28, 14, 7, 28, 35], todayMinutes: 30 },
+    sleep: { days: [420, 400, 450, 430, 410, 440, 440], todayMinutes: 440, averageMinutes: 420 },
+  },
 }
 
 const retryMessage = 'We could not save that change. Please try again.'

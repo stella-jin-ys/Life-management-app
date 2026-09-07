@@ -3,6 +3,7 @@ import { Activity, Apple, Droplets, MoonStar, Utensils } from 'lucide-react'
 const metricIcons = { water: Droplets, meals: Utensils, sleep: MoonStar, movement: Activity }
 
 export default function HealthPanel({ metrics, onAdjustMetric }) {
+  const meals = metrics.find(({ id }) => id === 'meals')
   const average = Math.round(
     metrics.reduce((total, metric) => total + Math.min(metric.value / metric.target, 1), 0) /
       metrics.length * 100,
@@ -18,8 +19,8 @@ export default function HealthPanel({ metrics, onAdjustMetric }) {
         </div>
       </div>
       <div className="diet-summary">
-        <strong>Oatmeal, eggs, greens, water</strong>
-        <span>Nice balance today</span>
+        <strong>{meals?.value ? `${meals.value} nourishing meal${meals.value === 1 ? '' : 's'} logged` : 'No meals logged yet'}</strong>
+        <span>{meals?.value ? 'A gentle record of today.' : 'Add a meal when it feels useful.'}</span>
       </div>
 
       <div className="health-layout">

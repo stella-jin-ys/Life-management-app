@@ -51,17 +51,57 @@ function mapHealth(row) {
   ]
 }
 
+function recentDates(entryDate, count = 7) {
+  const today = new Date(`${entryDate}T12:00:00.000Z`)
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(today)
+    date.setUTCDate(today.getUTCDate() - (count - index - 1))
+    return date.toISOString().slice(0, 10)
+  })
+}
+
+function mapDailyMinutes(rows, dates) {
+  const minutesByDate = new Map(rows.map(({ entry_date, minutes }) => [entry_date, minutes]))
+  return dates.map((date) => minutesByDate.get(date) || 0)
+}
+
+function mapSupportingSummaries(entryDate, taskRows, studyRows, workoutRows, sleepRows) {
+  const dates = recentDates(entryDate)
+  const workoutDays = mapDailyMinutes(workoutRows, dates)
+  const sleepDays = mapDailyMinutes(sleepRows, dates)
+  const totalSleep = sleepRows.reduce((total, { minutes }) => total + minutes, 0)
+
+  return {
+    tasks: taskRows.length ? {
+      complete: taskRows.filter(({ is_complete }) => is_complete).length,
+      total: taskRows.length,
+    } : null,
+    study: studyRows[0] ? { topic: studyRows[0].topic, entryDate: studyRows[0].entry_date } : null,
+    workout: workoutRows.length ? { days: workoutDays, todayMinutes: workoutDays.at(-1) } : null,
+    sleep: sleepRows.length ? {
+      averageMinutes: Math.round(totalSleep / sleepRows.length),
+      days: sleepDays,
+      todayMinutes: sleepDays.at(-1),
+    } : null,
+  }
+}
+
 export async function loadDashboard(userId, timezone = 'UTC') {
   const client = requireClient()
   const entryDate = localDate(timezone)
-  const [moodResult, highlightsResult, healthResult, goalsResult, signalResult] = await Promise.all([
+  const summaryStartDate = recentDates(entryDate)[0]
+  const [moodResult, highlightsResult, healthResult, goalsResult, signalResult, tasksResult, studyResult, workoutResult, sleepResult] = await Promise.all([
     client.from('mood_entries').select('mood').eq('user_id', userId).eq('entry_date', entryDate).maybeSingle(),
     client.from('highlights').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
     client.from('health_entries').select('*').eq('user_id', userId).eq('entry_date', entryDate).maybeSingle(),
     client.from('goals').select('*, milestones(*)').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: true }).limit(1),
     client.rpc('get_comfort_signal', { p_feeling: 'drained' }),
+    client.from('tasks').select('is_complete').eq('user_id', userId),
+    client.from('study_logs').select('topic, entry_date').eq('user_id', userId).eq('entry_date', entryDate).order('created_at', { ascending: false }).limit(1),
+    client.from('workout_entries').select('entry_date, minutes').eq('user_id', userId).gte('entry_date', summaryStartDate).lte('entry_date', entryDate),
+    client.from('sleep_entries').select('entry_date, minutes').eq('user_id', userId).gte('entry_date', summaryStartDate).lte('entry_date', entryDate),
   ])
-  const failed = [moodResult, highlightsResult, healthResult, goalsResult, signalResult].find(({ error }) => error)
+  const failed = [moodResult, highlightsResult, healthResult, goalsResult, signalResult, tasksResult, studyResult, workoutResult, sleepResult].find(({ error }) => error)
   if (failed) throw failed.error
 
   let goalRow = goalsResult.data?.[0]
@@ -100,6 +140,13 @@ export async function loadDashboard(userId, timezone = 'UTC') {
     } : getComfortSignal('drained'),
     selectedFeeling: 'drained',
     entryDate,
+    supporting: mapSupportingSummaries(
+      entryDate,
+      tasksResult.data || [],
+      studyResult.data || [],
+      workoutResult.data || [],
+      sleepResult.data || [],
+    ),
   }
 }
 

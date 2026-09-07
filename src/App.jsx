@@ -13,7 +13,7 @@ import useDashboardData from './features/dashboard/useDashboardData.js'
 
 export default function App({ user, profile, onSignOut }) {
   const [activeSection, setActiveSection] = useState('dashboard')
-  const { selectedMood, selectedFeeling, highlights, metrics, goal, signal, loading, error,
+  const { selectedMood, selectedFeeling, highlights, metrics, goal, signal, supporting, loading, error,
     selectMood, selectFeeling, addHighlight, updateMetric, toggleMilestone } = useDashboardData(user, profile)
   const dateLabel = new Intl.DateTimeFormat(undefined, {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: profile?.timezone || undefined,
@@ -42,12 +42,12 @@ export default function App({ user, profile, onSignOut }) {
       {loading && <p className="data-loading" role="status">Gathering your latest notes…</p>}
       <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={selectMood} />
       <div className="dashboard-grid">
-        <HighlightsPanel onAddHighlight={addHighlight} />
+        <HighlightsPanel onAddHighlight={addHighlight} isDemo={!user} />
         <LowBatteryPanel feelings={feelings} selectedFeeling={selectedFeeling}
           signal={signal} onSelectFeeling={selectFeeling} />
         <HealthPanel metrics={metrics} onAdjustMetric={updateMetric} />
         <GoalsPanel goal={goal} onToggleMilestone={toggleMilestone} />
-        <SupportingTiles />
+        <SupportingTiles summaries={supporting} />
       </div>
     </AppShell>
   )

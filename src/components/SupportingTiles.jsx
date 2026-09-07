@@ -13,32 +13,61 @@ function Tile({ id, title, icon: Icon, children, className = '' }) {
   )
 }
 
-export default function SupportingTiles() {
+function formatMinutes(minutes) {
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return hours ? `${hours}h${remainder ? ` ${remainder}m` : ''}` : `${remainder}m`
+}
+
+function WorkoutChart({ days }) {
+  const max = Math.max(...days, 1)
+  return (
+    <div className="workout-bars" role="img" aria-label="Workout minutes across seven days">
+      {days.map((minutes, index) => <span key={index} style={{ '--bar-height': `${minutes ? Math.max(5, Math.round(minutes / max * 35)) : 2}px` }} />)}
+    </div>
+  )
+}
+
+function SleepChart({ days }) {
+  const max = Math.max(...days, 1)
+  const points = days.map((minutes, index) => `${15 + index * 42} ${32 - Math.round(minutes / max * 22)}`).join(' L')
+  return (
+    <svg className="sleep-line" viewBox="0 0 280 42" role="img" aria-label="Sleep trend">
+      <line x1="8" y1="21" x2="272" y2="21" />
+      <path d={`M${points}`} />
+      {days.map((minutes, index) => <circle className={index === days.length - 1 ? 'sleep-today' : undefined}
+        key={index} cx={15 + index * 42} cy={32 - Math.round(minutes / max * 22)} r={index === days.length - 1 ? 4 : 3} />)}
+    </svg>
+  )
+}
+
+export default function SupportingTiles({ summaries = {} }) {
+  const { tasks, study, workout, sleep } = summaries
   return (
     <>
       <Tile id="tasks" title="Tasks" icon={CheckCircle2} className="tasks-tile">
-        <span className="support-copy">3 of 5 done</span>
-        <span className="mini-progress"><span /></span>
+        {tasks ? <>
+          <span className="support-copy">{tasks.complete} of {tasks.total} done</span>
+          <span className="mini-progress"><span style={{ transform: `scaleX(${tasks.complete / tasks.total})` }} /></span>
+        </> : <span className="support-empty">No tasks yet</span>}
       </Tile>
       <Tile id="study" title="Study" icon={BookOpen} className="study-tile">
-        <strong className="support-value">UI design</strong>
-        <span className="support-note">Logged today</span>
+        {study ? <>
+          <strong className="support-value">{study.topic}</strong>
+          <span className="support-note">Logged today</span>
+        </> : <span className="support-empty">No study logged today</span>}
       </Tile>
       <Tile id="workout" title="Workout" icon={Dumbbell} className="workout-tile">
-        <div className="workout-bars" role="img" aria-label="Workout hours across seven days">
-          {[2, 1, 4, 2, 1, 4, 5].map((height, index) => <span key={index} style={{ '--bar-height': `${height * 7}px` }} />)}
-        </div>
-        <span className="support-note">30 min today</span>
+        {workout ? <>
+          <WorkoutChart days={workout.days} />
+          <span className="support-note">{workout.todayMinutes ? `${workout.todayMinutes} min today` : 'No workout today'}</span>
+        </> : <span className="support-empty">No workouts logged yet</span>}
       </Tile>
       <Tile id="sleeping" title="Sleeping" icon={Moon} className="sleeping-tile">
-        <div className="sleep-summary"><strong>7h 20m</strong><span>avg 7h</span></div>
-        <svg className="sleep-line" viewBox="0 0 280 42" role="img" aria-label="Sleep trend">
-          <line x1="8" y1="21" x2="272" y2="21" />
-          <path d="M15 24 L58 21 L100 29 L142 16 L184 19 L226 27 L268 20" />
-          <circle cx="15" cy="24" r="3" /><circle cx="58" cy="21" r="3" /><circle cx="100" cy="29" r="3" />
-          <circle cx="142" cy="16" r="3" /><circle cx="184" cy="19" r="3" /><circle cx="226" cy="27" r="3" />
-          <circle className="sleep-today" cx="268" cy="20" r="4" />
-        </svg>
+        {sleep ? <>
+          <div className="sleep-summary"><strong>{sleep.todayMinutes ? formatMinutes(sleep.todayMinutes) : 'No sleep today'}</strong><span>avg {formatMinutes(sleep.averageMinutes)}</span></div>
+          <SleepChart days={sleep.days} />
+        </> : <span className="support-empty">No sleep logged yet</span>}
       </Tile>
     </>
   )

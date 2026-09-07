@@ -16,7 +16,9 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onS
 
       <div className="compact-signal">
         <strong>{percentage == null ? '—' : `${percentage}%`}</strong>
-        <span>{signal.status === 'insufficient_data' ? 'private until there is enough data' : 'feel this too · demo signal'}</span>
+        <span>{signal.status === 'insufficient_data'
+          ? 'private until there is enough data'
+          : signal.status === 'available' ? 'of recent shared check-ins' : 'feel this too · demo signal'}</span>
       </div>
 
       <div className="feeling-options" aria-label="Choose a feeling">
