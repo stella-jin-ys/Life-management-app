@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import AppShell from './components/AppShell.jsx'
 import GoalsPanel from './components/GoalsPanel.jsx'
@@ -13,6 +14,7 @@ import useDashboardData from './features/dashboard/useDashboardData.js'
 
 export default function App({ user, profile, onSignOut }) {
   const [activeSection, setActiveSection] = useState('dashboard')
+  const navigate = useNavigate()
   const { selectedMood, selectedFeeling, highlights, metrics, goal, signal, supporting, loading, error,
     selectMood, selectFeeling, addHighlight, updateMetric, toggleMilestone } = useDashboardData(user, profile)
   const dateLabel = new Intl.DateTimeFormat(undefined, {
@@ -20,6 +22,16 @@ export default function App({ user, profile, onSignOut }) {
   }).format(new Date())
 
   function navigateTo(section) {
+    if (['tasks', 'study', 'workout', 'sleeping', 'diary', 'finance'].includes(section)) {
+      setActiveSection(section)
+      navigate(`/${section}`)
+      return
+    }
+    if (section === 'settings') {
+      setActiveSection(section)
+      navigate('/settings')
+      return
+    }
     setActiveSection(section)
     document.getElementById(section)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
   }

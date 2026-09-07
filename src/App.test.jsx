@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
@@ -13,6 +14,10 @@ const api = vi.hoisted(() => ({
 vi.mock('./lib/lifeApi.js', () => api)
 
 import App from './App.jsx'
+
+function renderApp(ui) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
 
 function authenticatedDashboard(overrides = {}) {
   return {
@@ -37,7 +42,7 @@ afterEach(() => {
 })
 
 test('renders the dashboard greeting and navigation', () => {
-  render(<App />)
+  renderApp(<App />)
 
   expect(
     screen.getByRole('heading', { name: 'Good morning, Stella' }),
@@ -48,7 +53,7 @@ test('renders the dashboard greeting and navigation', () => {
 })
 
 test('shows every primary destination and marks the selected destination', () => {
-  render(<App />)
+  renderApp(<App />)
 
   for (const name of [
     'Dashboard',
@@ -66,7 +71,7 @@ test('shows every primary destination and marks the selected destination', () =>
 })
 
 test('keeps every destination enabled in the side menu', () => {
-  render(<App />)
+  renderApp(<App />)
 
   for (const name of [
     'Tasks',
@@ -87,7 +92,7 @@ test('keeps every destination enabled in the side menu', () => {
 test('moves the matching dashboard section into view from the sidebar', () => {
   const scrollIntoView = vi.fn()
   Element.prototype.scrollIntoView = scrollIntoView
-  render(<App />)
+  renderApp(<App />)
 
   fireEvent.click(screen.getAllByRole('button', { name: 'Highlights' })[0])
 
@@ -95,7 +100,7 @@ test('moves the matching dashboard section into view from the sidebar', () => {
 })
 
 test('toggles the compact navigation menu', () => {
-  render(<App />)
+  renderApp(<App />)
 
   const menuButton = screen.getByRole('button', { name: 'Open navigation' })
   expect(menuButton).toHaveAttribute('aria-expanded', 'false')
@@ -106,7 +111,7 @@ test('toggles the compact navigation menu', () => {
 })
 
 test('responds supportively when a mood is selected', () => {
-  render(<App />)
+  renderApp(<App />)
 
   fireEvent.click(screen.getByRole('button', { name: 'Tender' }))
 
@@ -116,7 +121,7 @@ test('responds supportively when a mood is selected', () => {
 })
 
 test('adds a highlight and returns a compliment', () => {
-  render(<App />)
+  renderApp(<App />)
 
   fireEvent.change(screen.getByRole('textbox', { name: 'Quick highlight' }),
     { target: { value: 'Drank water before coffee' } })
@@ -126,14 +131,14 @@ test('adds a highlight and returns a compliment', () => {
 })
 
 test('uses authored local dashboard data without loading Supabase in demo mode', () => {
-  render(<App />)
+  renderApp(<App />)
 
   expect(api.loadDashboard).not.toHaveBeenCalled()
   expect(screen.getByText('3 of 5 done')).toBeVisible()
 })
 
 test('shows an honest demo comfort signal for a selected feeling', () => {
-  render(<App />)
+  renderApp(<App />)
 
   fireEvent.click(screen.getByRole('button', { name: 'Overwhelmed' }))
 
@@ -146,7 +151,7 @@ test('shows an honest demo comfort signal for a selected feeling', () => {
 })
 
 test('shows hydration progress with a meaningful numeric value', () => {
-  render(<App />)
+  renderApp(<App />)
 
   expect(
     screen.getByRole('progressbar', { name: 'Hydration progress' }),
@@ -154,7 +159,7 @@ test('shows hydration progress with a meaningful numeric value', () => {
 })
 
 test('updates goal momentum when a milestone is completed', () => {
-  render(<App />)
+  renderApp(<App />)
 
   expect(screen.getByRole('heading', { name: 'Goals' })).toBeVisible()
   fireEvent.click(
@@ -169,7 +174,7 @@ test('updates goal momentum when a milestone is completed', () => {
 test('shows persisted supporting-summary empty states for an authenticated empty account', async () => {
   api.loadDashboard.mockResolvedValue(authenticatedDashboard())
 
-  render(<App user={{ id: 'user-1', email: 'stella@example.com' }} profile={{ timezone: 'Europe/Stockholm' }} />)
+  renderApp(<App user={{ id: 'user-1', email: 'stella@example.com' }} profile={{ timezone: 'Europe/Stockholm' }} />)
 
   await waitFor(() => expect(api.loadDashboard).toHaveBeenCalledWith('user-1', 'Europe/Stockholm'))
   expect(screen.getByText('No tasks yet')).toBeVisible()
@@ -187,7 +192,7 @@ test('persists authenticated dashboard interactions after loading', async () => 
   api.saveHealth.mockResolvedValue()
   api.saveMilestone.mockResolvedValue()
 
-  render(<App user={{ id: 'user-1', email: 'stella@example.com' }} profile={{ timezone: 'Europe/Stockholm' }} />)
+  renderApp(<App user={{ id: 'user-1', email: 'stella@example.com' }} profile={{ timezone: 'Europe/Stockholm' }} />)
 
   await waitFor(() => expect(api.loadDashboard).toHaveBeenCalledWith('user-1', 'Europe/Stockholm'))
   fireEvent.click(screen.getByRole('button', { name: 'Bright' }))
