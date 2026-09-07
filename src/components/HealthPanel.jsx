@@ -2,7 +2,7 @@ import { Activity, Apple, Droplets, MoonStar, Utensils } from 'lucide-react'
 
 const metricIcons = { water: Droplets, meals: Utensils, sleep: MoonStar, movement: Activity }
 
-export default function HealthPanel({ metrics }) {
+export default function HealthPanel({ metrics, onAdjustMetric }) {
   const average = Math.round(
     metrics.reduce((total, metric) => total + Math.min(metric.value / metric.target, 1), 0) /
       metrics.length * 100,
@@ -36,7 +36,11 @@ export default function HealthPanel({ metrics }) {
                 <div className="metric-label">
                   <Icon aria-hidden="true" size={16} />
                   <span>{label}</span>
-                  <strong>{value} <small>/ {target} {unit}</small></strong>
+                  <span className="metric-controls">
+                    <button type="button" aria-label={`Decrease ${label}`} onClick={() => onAdjustMetric?.(id, id === 'sleep' ? -0.5 : -1)}>−</button>
+                    <strong>{value} <small>/ {target} {unit}</small></strong>
+                    <button type="button" aria-label={`Increase ${label}`} onClick={() => onAdjustMetric?.(id, id === 'sleep' ? 0.5 : 1)}>+</button>
+                  </span>
                 </div>
                 <div className="metric-track" role="progressbar"
                   aria-label={`${label} progress`} aria-valuemin="0" aria-valuemax="100"

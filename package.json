@@ -6,18 +6,32 @@
   "scripts": {
     "dev": "vite",
     "test": "vitest",
-    "build": "vite build"
+    "test:run": "vitest run",
+    "build": "vite build",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "test:db": "supabase test db",
+    "functions:serve": "supabase functions serve --env-file supabase/.env.local",
+    "test:functions": "deno test --allow-env supabase/functions/generate-compliment/compliment_test.ts",
+    "test:e2e": "playwright test",
+    "verify": "vitest run && vite build",
+    "verify:full": "npm run verify && npm run test:functions && npm run test:db && npm run test:e2e"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
+    "@playwright/test": "^1",
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^25.0.1",
+    "supabase": "^2",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
   }
