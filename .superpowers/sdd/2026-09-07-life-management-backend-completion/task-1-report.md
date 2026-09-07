@@ -239,3 +239,42 @@ The Deno invocation generated an untracked `deno.lock` at the repository root. I
 ### Fix-round commit
 
 - `751f13701764a7dc074ad384bf11df5bb110a720` — `docs: append task 1 fix round 3 report`.
+
+## Fix round 4 report
+
+Date: 2026-09-07
+Scope: one technically distinct, safe local-backend attempt plus the minimal Task 1 script correction required for the documented function-test interface. No application behavior or test assertions were changed.
+
+### Files changed
+
+- `package.json` — changed `test:functions` from a missing global `deno` executable to the already-verified npm-provided Deno invocation: `npm exec --yes deno -- test --allow-env supabase/functions/generate-compliment/compliment_test.ts`.
+- `.superpowers/sdd/2026-09-07-life-management-backend-completion/task-1-report.md` — appended this report.
+
+`.env.local` and `supabase/.env.local` remain ignored and unpopulated. This round generated the already-known untracked `deno.lock` and an untracked `supabase/.temp/` directory; both were preserved and not staged to avoid destructive cleanup. The pre-existing untracked plan file remains untouched.
+
+### Root-cause evidence and distinct safe route
+
+1. `npx supabase start --help` (approved Docker/CLI inspection) — PASS. The CLI explicitly advertises `--exclude` and lists `storage-api` and `imgproxy` as valid container names. Docker was healthy (`24.0.7`), no `life-management` Supabase container existed, and all listed local Supabase images were cached except `storage-api` (and no storage image was listed).
+
+2. `npx supabase start --exclude storage-api,imgproxy` (approved safe startup attempt) — BLOCKED. The command accepted the exclusion, printed `Starting database...` and `Initialising schema...`, then nevertheless started pulling `v1.70.3` from `supabase/storage-api`. It did not complete within the bounded attempt and was interrupted cleanly; its shutdown output was `Stopping containers...`, with exit code 130. This establishes that excluding the optional storage/image-proxy services does not bypass the storage-image dependency in this CLI/project combination.
+
+3. `npx supabase status --output json` after the interrupted attempt — FAIL. Exact result: `failed to inspect container health: Error response from daemon: No such container: supabase_db_life-management`. Thus no healthy project database exists and no anon key can be obtained for an ignored local environment file.
+
+### Commands and outcomes
+
+1. `npm exec --yes deno -- test --allow-env supabase/functions/generate-compliment/compliment_test.ts` — PASS, exit 0: 5 passed, 0 failed. This isolated the global-Deno script problem before changing the script.
+2. `npm run test:functions` after the script correction — PASS, exit 0: 5 passed, 0 failed.
+3. `npm run test:run -- --exclude '.worktrees/**'` — PASS, exit 0: 4 test files passed, 20 tests passed. Existing non-failing GoTrue multiple-client and React Router future-flag warnings remain.
+4. `npm run build` — PASS, exit 0: Vite transformed 1,646 modules and built successfully.
+5. `git diff --check` — PASS, exit 0.
+6. `npm run db:reset` — BLOCKED, exit 1: `LegacyResetLocalDbNotRunningError`, `supabase start is not running.`
+7. `npm run test:db` — BLOCKED, exit 1: `LegacyDbConnectError`, connection refused to `127.0.0.1:54322`; the CLI recommends `supabase start`.
+8. `npm run test:e2e` — FAIL, exit 1: 1 passed and 3 failed. Each auth-dependent test timed out at `e2e/helpers/auth.js:14` waiting for a signup status matching `/verification|way/i`; the signed-out redirect test passed. This is consistent with the independently confirmed absence of local Supabase/Auth.
+
+### Fix-round conclusion
+
+The Deno command interface is now genuinely runnable through `npm run test:functions` without a global Deno installation, and its 5 tests pass. The backend blocker is external to repository setup: Docker is available and the CLI accepts an exclusion route, but startup still pulls the unavailable `supabase/storage-api:v1.70.3` dependency and leaves no project database container. Consequently `db:reset`, database tests, `.env.local` population, and Auth-dependent E2E cannot complete. No additional backend attempts or application/test changes were made.
+
+### Fix-round commit
+
+- Pending commit for the package-script correction and this report.
