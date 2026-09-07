@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { isSupabaseConfigured, supabase } from '../../lib/supabase/client.js'
 import { signOut as signOutRequest } from './authApi.js'
@@ -17,6 +17,13 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const refreshProfile = useCallback(async () => {
+    const nextProfile = await loadProfile(session?.user)
+    setProfile(nextProfile)
+    setError('')
+    return nextProfile
+  }, [session?.user])
 
   useEffect(() => {
     let active = true
@@ -68,8 +75,9 @@ export function AuthProvider({ children }) {
     profile,
     loading,
     error,
+    refreshProfile,
     signOut: signOutRequest,
-  }), [session, profile, loading, error])
+  }), [session, profile, loading, error, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

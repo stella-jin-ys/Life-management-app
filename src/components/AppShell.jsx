@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import MobileHeader from './MobileHeader.jsx'
 import Sidebar from './Sidebar.jsx'
+import SettingsPage from '../features/settings/SettingsPage.jsx'
 import { Apple, Home, Sparkles, Target } from 'lucide-react'
 
 export default function AppShell({ activeSection, onNavigate, children, user, profile, onSignOut, dateLabel }) {
@@ -24,7 +25,9 @@ export default function AppShell({ activeSection, onNavigate, children, user, pr
             <Sidebar activeSection={activeSection} onNavigate={navigate} user={user} profile={profile} onSignOut={onSignOut} mobile />
         </div>
       )}
-      <main className="dashboard" id="dashboard">{children}</main>
+      <main className="dashboard" id="dashboard">
+        {activeSection === 'settings' && user ? <SettingsPage /> : children}
+      </main>
       <nav className="mobile-bottom-nav" aria-label="Mobile shortcuts">
         <button type="button" aria-label="Home" onClick={() => navigate('dashboard')}><Home size={17} /><span>Home</span></button>
         <button type="button" aria-label="Highlights" onClick={() => navigate('highlights')}><Sparkles size={17} /><span>Highlights</span></button>

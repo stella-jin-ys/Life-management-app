@@ -23,8 +23,8 @@ function AuthenticatedRoutes() {
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/signup" element={<AuthPage mode="signup" />} />
             <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<AuthenticatedApp />} />
           </Route>
