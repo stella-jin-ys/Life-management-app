@@ -45,3 +45,34 @@ Earlier during implementation, `npm run test:run -- src/App.test.jsx src/feature
 ## Commits
 
 - `dbf0779` — `feat: add persisted supporting module pages`
+
+## Fix round 1
+
+### Review findings addressed
+
+- **Demo module routes:** Root cause: demo mode mounted `<App />` directly instead of a route tree. Sidebar navigation changed the URL to a supporting-module path, but there was no component mounted at that path. Added `src/features/modules/DemoRoutes.jsx`, a BrowserRouter child route tree that renders the six module pages without `AuthProvider`, a user, or a Supabase request. `main.jsx` uses it only for the existing `VITE_DEMO_MODE` or development `?demo` condition. Authenticated routes and their `ProtectedRoute` guard are unchanged.
+- **Persistence coverage:** Expanded `src/features/modules/module.test.jsx` to exercise `listTasks`, `toggleTask`, `deleteTask`, `listStudyLogs`, `listWorkoutEntries`, `upsertSleepEntry`, `getDiaryEntry`, `upsertDiaryEntry`, and `listFinanceEntries`, in addition to the previously covered APIs.
+- **Recoverable form failure:** Added a rendered Finance page test that forces a real module API save response to fail and asserts that both typed inputs remain in place while the retry error is displayed.
+
+### Files changed in this round
+
+- Created `src/features/modules/DemoRoutes.jsx`.
+- Modified `src/main.jsx`.
+- Modified `src/features/modules/module.test.jsx`.
+- Appended this fix report.
+
+### Verification
+
+1. `npm run test:run -- src/features/modules/module.test.jsx` — exit 0: 1 file, 14 tests passed.
+2. `npm run test:run -- --exclude '.worktrees/**'` — exit 0: 9 files, 68 tests passed.
+3. `npm run build` — exit 0: Vite production build completed; 1,652 modules transformed.
+
+The scoped suite emitted only existing, non-failing React Router future-flag and Supabase GoTrue-client test warnings.
+
+### Remaining limitation
+
+The local Supabase/Postgres stack remains unavailable. No database or Playwright E2E run is claimed; the demo-route coverage is an isolated rendered route test and makes no auth or Supabase call.
+
+### Fix commit
+
+- `f4d99ba` — `fix: keep supporting modules available in demo mode`
