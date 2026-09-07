@@ -134,3 +134,47 @@ The repository setup/documentation is correct for the available baseline: requir
 ### Fix-round commit
 
 - `5a92e5de50c59e7432396788e19b473937916001` — `docs: append task 1 fix round report`.
+
+## Fix round 2 report
+
+Date: 2026-09-07
+Scope: safe alternative-runtime verification only. No scripts, application code, or frontend configuration were changed.
+
+### Alternative route checked
+
+1. `command -v supabase; command -v deno; command -v bun; find node_modules/.bin -maxdepth 1 -type f \( -name 'supabase' -o -name 'deno' -o -name 'bun' \) -print; find /Users/stella/.codex /Users/stella/.cache /Users/stella/.local -type f \( -name 'deno' -o -name 'supabase' -o -name 'deno-*' \) -perm -111 -print` — completed, exit 0. Exact result: no paths were printed. There is no directly discoverable local Supabase, Deno, Bun, node_modules executable, or cached executable runtime in those locations.
+
+2. `npm exec -- supabase --version; docker ps -a --format 'table {{.Names}}\\t{{.Status}}\\t{{.Image}}'; docker images --format '{{.Repository}}:{{.Tag}}' | rg 'supabase|deno' | sed -n '1,120p'; find /Users/stella/.npm /Users/stella/Library/Caches -type f \( -iname '*deno*' -o -iname '*supabase*' \) 2>/dev/null | sed -n '1,80p'` — completed, exit 0. Exact relevant output:
+
+   ```text
+   2.116.0
+   A new version of Supabase CLI is available: v2.117.0 (currently installed v2.116.0)
+   NAMES                     STATUS                     IMAGE
+   sportship-postgres        Up 9 hours                 postgres:16-alpine
+   socialsportapp-db-1       Exited (255) 9 hours ago   postgres:17-alpine
+   phase-1-fast-build-db-1   Exited (0) 8 days ago      postgres:17-alpine
+   sqlserver2022             Exited (0) 17 months ago   mcr.microsoft.com/mssql/server:2022-latest
+   public.ecr.aws/supabase/postgres:17.6.1.165
+   public.ecr.aws/supabase/realtime:v2.129.3
+   public.ecr.aws/supabase/gotrue:v2.196.0
+   public.ecr.aws/supabase/logflare:1.50.4
+   public.ecr.aws/supabase/studio:2026.08.17-sha-0c1da8f
+   public.ecr.aws/supabase/postgres-meta:v0.98.0
+   public.ecr.aws/supabase/postgrest:v16.1
+   public.ecr.aws/supabase/edge-runtime:v1.74.3
+   public.ecr.aws/supabase/mailpit:v1.30.2
+   public.ecr.aws/supabase/vector:0.53.0-alpine
+   public.ecr.aws/supabase/kong:2.8.1
+   /Users/stella/Library/Caches/pnpm/v11/metadata/registry.npmjs.org/supabase.jsonl
+   /Users/stella/Library/Caches/pnpm/v11/metadata/registry.npmjs.org/@supabase/supabase-js.jsonl
+   ```
+
+   The cached Supabase images do not constitute a running project stack: Docker lists no `supabase_db_life-management` container. The cache contains npm metadata only for Supabase/Deno-related names; no executable Deno runtime was found.
+
+### Fix-round conclusion
+
+No alternative verification route is available in this environment. The exact external boundary remains: local Supabase has cached images and an npm-provided CLI, but startup never creates a healthy project database container; therefore `.env.local` cannot receive an anon key and `db:reset` cannot run. Deno is not installed or cached as an executable, so function tests cannot run. Auth-dependent E2E remains blocked by the absent Supabase service. The frontend suite/build were not rerun because no files outside this report were touched.
+
+### Fix-round commit
+
+- Pending fix-round 2 report commit (recorded after commit).
