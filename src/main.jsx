@@ -80,7 +80,7 @@ const demoMode = import.meta.env.VITE_DEMO_MODE === 'true' || (import.meta.env.D
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       {demoMode ? <DemoRoutes /> : <AppRoutes />}
     </BrowserRouter>
   </React.StrictMode>,

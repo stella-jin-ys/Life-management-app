@@ -1,9 +1,9 @@
-import { feelings, healthMetrics, initialGoal, moods } from '../data/demoData.js'
+import { feelings, healthMetrics, moods } from '../data/demoData.js'
 import { localDate } from '../features/dashboard/date.js'
 import { getComfortSignal } from './dashboard.js'
 import { supabase } from './supabase/client.js'
 
-const defaultHealth = { hydration_glasses: 5, nourishing_meals: 2, sleep_minutes: 432, movement_minutes: 24 }
+const defaultHealth = { hydration_glasses: 0, nourishing_meals: 0, sleep_minutes: 0, movement_minutes: 0 }
 
 export { localDate }
 
@@ -90,55 +90,42 @@ export async function loadDashboard(userId, timezone = 'UTC') {
   const client = requireClient()
   const entryDate = localDate(timezone)
   const summaryStartDate = recentDates(entryDate)[0]
-  const [moodResult, highlightsResult, healthResult, goalsResult, signalResult, tasksResult, studyResult, workoutResult, sleepResult] = await Promise.all([
+  const [moodResult, highlightsResult, healthResult, goalsResult, feelingResult, signalResult, tasksResult, studyResult, workoutResult, sleepResult] = await Promise.all([
     client.from('mood_entries').select('mood').eq('user_id', userId).eq('entry_date', entryDate).maybeSingle(),
     client.from('highlights').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
     client.from('health_entries').select('*').eq('user_id', userId).eq('entry_date', entryDate).maybeSingle(),
     client.from('goals').select('*, milestones(*)').eq('user_id', userId).eq('status', 'active').order('created_at', { ascending: true }).limit(1),
+    client.from('feeling_checkins').select('feeling').eq('user_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
     client.rpc('get_comfort_signal', { p_feeling: 'drained' }),
     client.from('tasks').select('is_complete').eq('user_id', userId),
     client.from('study_logs').select('topic, entry_date').eq('user_id', userId).eq('entry_date', entryDate).order('created_at', { ascending: false }).limit(1),
     client.from('workout_entries').select('entry_date, minutes').eq('user_id', userId).gte('entry_date', summaryStartDate).lte('entry_date', entryDate),
     client.from('sleep_entries').select('entry_date, minutes').eq('user_id', userId).gte('entry_date', summaryStartDate).lte('entry_date', entryDate),
   ])
-  const failed = [moodResult, highlightsResult, healthResult, goalsResult, signalResult, tasksResult, studyResult, workoutResult, sleepResult].find(({ error }) => error)
+  const failed = [moodResult, highlightsResult, healthResult, goalsResult, feelingResult, signalResult, tasksResult, studyResult, workoutResult, sleepResult].find(({ error }) => error)
   if (failed) throw failed.error
 
-  let goalRow = goalsResult.data?.[0]
-  if (!goalRow) {
-    const { data: created, error: goalError } = await client.from('goals').insert({
-      user_id: userId, title: initialGoal.title, why: initialGoal.why,
-    }).select().single()
-    if (goalError) throw goalError
-    const { data: milestones, error: milestoneError } = await client.from('milestones').insert(
-      initialGoal.milestones.map(({ label, complete }, index) => ({ goal_id: created.id, label, position: index, is_complete: complete })),
-    ).select()
-    if (milestoneError) throw milestoneError
-    goalRow = { ...created, milestones }
-  }
-
   let health = healthResult.data
-  if (!health) {
-    const { data: createdHealth, error: healthError } = await client.from('health_entries').insert({
-      user_id: userId, entry_date: entryDate, ...defaultHealth,
-    }).select().single()
-    if (healthError) throw healthError
-    health = createdHealth
+  const selectedFeeling = feelingResult.data?.feeling || feelings[0].id
+  let serverSignal = signalResult.data?.[0]
+  if (selectedFeeling !== 'drained') {
+    const selectedSignalResult = await client.rpc('get_comfort_signal', { p_feeling: selectedFeeling })
+    if (selectedSignalResult.error) throw selectedSignalResult.error
+    serverSignal = selectedSignalResult.data?.[0]
   }
-  const serverSignal = signalResult.data?.[0]
   return {
     selectedMood: moodResult.data?.mood || moods[1].id,
     highlights: highlightsResult.data?.map(mapHighlight) || [],
     metrics: mapHealth(health),
-    goal: mapGoal(goalRow),
+    goal: goalsResult.data?.[0] ? mapGoal(goalsResult.data[0]) : null,
     signal: serverSignal ? {
       percentage: serverSignal.status === 'available' ? serverSignal.percentage : null,
-      affirmation: getComfortSignal('drained').affirmation,
-      label: feelings[0].label,
+      affirmation: getComfortSignal(selectedFeeling).affirmation,
+      label: feelings.find(({ id }) => id === selectedFeeling)?.label || feelings[0].label,
       totalCount: serverSignal.total_count,
       status: serverSignal.status,
-    } : getComfortSignal('drained'),
-    selectedFeeling: 'drained',
+    } : getComfortSignal(selectedFeeling),
+    selectedFeeling,
     entryDate,
     supporting: mapSupportingSummaries(
       entryDate,
@@ -163,8 +150,10 @@ export async function saveFeeling(userId, feeling) {
   const { error: insertError } = await client.from('feeling_checkins').insert({ user_id: userId, feeling })
   if (insertError) throw insertError
   const { data, error } = await client.rpc('get_comfort_signal', { p_feeling: feeling })
-  if (error) throw error
-  return data?.[0]
+  // The check-in is already durable. A privacy-safe signal is optional, so a
+  // transient aggregate failure must not make the UI retry the insert.
+  if (error) return null
+  return data?.[0] || null
 }
 
 export async function createHighlight(userId, content) {
@@ -177,8 +166,15 @@ export async function createHighlight(userId, content) {
     if (compliment?.compliment) return { ...saved, compliment: compliment.compliment, complimentStatus: compliment.status || 'complete' }
   } catch { /* store the same safe fallback when the local function is unavailable */ }
   const fallback = fallbackCompliment(content)
-  await client.from('highlights').update({ compliment: fallback, compliment_status: 'fallback' })
-    .eq('id', data.id).eq('user_id', userId)
+  const { data: claimed, error: claimError } = await client.rpc('claim_compliment_generation', { p_highlight_id: data.id })
+  if (claimError) throw claimError
+  if (!claimed) return saved
+  const { data: finalized, error: fallbackError } = await client.rpc('finalize_compliment_generation', {
+    p_highlight_id: data.id,
+    p_compliment: fallback,
+    p_status: 'fallback',
+  })
+  if (fallbackError || finalized === false) throw fallbackError || new Error('Could not save fallback compliment')
   return { ...saved, compliment: fallback, complimentStatus: 'fallback' }
 }
 

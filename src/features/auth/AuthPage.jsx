@@ -31,6 +31,7 @@ export default function AuthPage({ mode = 'login' }) {
       }
       if (mode === 'signup') {
         if (values.name.trim().length < 1) throw new Error('Please add your name.')
+        if (values.name.trim().length > 80) throw new Error('Names can be up to 80 characters.')
         if (values.password.length < 12) throw new Error('Use at least 12 characters for your password.')
         const { error } = await signUp({
           email: values.email.trim(),

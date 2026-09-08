@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Flag } from 'lucide-react'
 
 export default function GoalsPanel({ goal, onToggleMilestone }) {
-  const next = goal.milestones.find(({ complete }) => !complete)
+  const next = goal?.milestones.find(({ complete }) => !complete)
 
   return (
     <section className="panel goals-panel" id="goals" aria-labelledby="goals-title">
@@ -9,14 +9,14 @@ export default function GoalsPanel({ goal, onToggleMilestone }) {
         <div>
           <span className="section-symbol symbol-gold"><Flag aria-hidden="true" size={18} /></span>
           <h2 id="goals-title">Goals</h2>
-          <p>{goal.why}</p>
+          <p>{goal?.why || 'Set one small intention when you are ready.'}</p>
         </div>
       </div>
 
-      <h3>{goal.title}</h3>
+      <h3>{goal?.title || 'No goal set yet'}</h3>
 
       <div className="milestone-list">
-        {goal.milestones.map(({ id, label, complete }) => (
+        {goal?.milestones.map(({ id, label, complete }) => (
           <label className="milestone" key={id}>
             <input type="checkbox" checked={complete}
               onChange={() => onToggleMilestone(id)} />

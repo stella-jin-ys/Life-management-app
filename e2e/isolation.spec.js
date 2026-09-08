@@ -14,9 +14,8 @@ test('each account starts with its own empty highlight feed', async ({ browser }
   await firstPage.getByLabel('Password').fill(first.password)
   await firstPage.getByRole('button', { name: 'Sign in' }).click()
   await expect(firstPage.getByRole('heading', { name: /Good morning/ })).toBeVisible()
-  await firstPage.getByRole('button', { name: 'Add a highlight' }).click()
-  await firstPage.getByLabel('What felt good or moved forward?').fill('Private account note')
-  await firstPage.getByRole('button', { name: 'Save highlight' }).click()
+  await firstPage.getByLabel('Quick highlight').fill('Private account note')
+  await firstPage.getByRole('button', { name: 'Save quick highlight' }).click()
 
   await signUp(secondPage, second)
   await secondPage.goto('/login')
@@ -24,7 +23,7 @@ test('each account starts with its own empty highlight feed', async ({ browser }
   await secondPage.getByLabel('Password').fill(second.password)
   await secondPage.getByRole('button', { name: 'Sign in' }).click()
   await expect(secondPage.getByRole('heading', { name: /Good morning/ })).toBeVisible()
-  await expect(secondPage.getByRole('heading', { name: 'Private account note' })).toHaveCount(0)
+  await expect(secondPage.getByLabel('Quick highlight')).toHaveValue('')
 
   await firstPage.close()
   await secondPage.close()

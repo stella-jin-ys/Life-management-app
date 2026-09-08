@@ -22,8 +22,7 @@ import { localDate } from '../dashboard/date.js'
 const saveError = 'We could not save this entry. Please try again.'
 const loadError = 'We could not load this page. Refresh to try again.'
 
-function recentDates(timezone) {
-  const today = localDate(timezone)
+function recentDates(timezone, today = localDate(timezone)) {
   const anchor = new Date(`${today}T12:00:00.000Z`)
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(anchor)
@@ -66,11 +65,26 @@ function mergeEntry(module, current, saved) {
 export default function useModuleData(module, user, timezone = 'UTC') {
   const userId = user?.id
   const [data, setData] = useState(() => emptyData(module))
+  const [today, setToday] = useState(() => localDate(timezone))
   const [loading, setLoading] = useState(Boolean(userId))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const dates = useMemo(() => recentDates(timezone), [timezone])
+  const dates = useMemo(() => recentDates(timezone, today), [timezone, today])
   const entryDate = dates.at(-1)
+
+  useEffect(() => {
+    function refreshDay() {
+      const next = localDate(timezone)
+      setToday((current) => current === next ? current : next)
+    }
+    refreshDay()
+    const interval = window.setInterval(refreshDay, 60_000)
+    document.addEventListener('visibilitychange', refreshDay)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refreshDay)
+    }
+  }, [timezone])
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -105,19 +119,21 @@ export default function useModuleData(module, user, timezone = 'UTC') {
   }, [load])
 
   const create = useCallback(async (values) => {
+    const currentEntryDate = localDate(timezone)
+    if (currentEntryDate !== today) setToday(currentEntryDate)
     setSaving(true)
     try {
       let saved
       if (!userId) {
-        saved = demoEntry(module, values, values.entryDate || entryDate)
+        saved = demoEntry(module, values, values.entryDate || currentEntryDate)
       } else {
         switch (module) {
           case 'tasks': saved = await createTask(userId, values.title, values.dueDate); break
           case 'study': saved = await createStudyLog(userId, values.topic, values.notes, timezone); break
-          case 'workout': saved = await upsertWorkoutEntry(userId, values.entryDate || entryDate, values.activity, values.minutes); break
-          case 'sleeping': saved = await upsertSleepEntry(userId, values.entryDate || entryDate, values.minutes); break
-          case 'diary': saved = await upsertDiaryEntry(userId, values.entryDate || entryDate, values.content, timezone); break
-          case 'finance': saved = await createFinanceEntry(userId, values.entryDate || entryDate, values.label, validateModuleValues('finance', values).amountCents); break
+          case 'workout': saved = await upsertWorkoutEntry(userId, values.entryDate || currentEntryDate, values.activity, values.minutes); break
+          case 'sleeping': saved = await upsertSleepEntry(userId, values.entryDate || currentEntryDate, values.minutes); break
+          case 'diary': saved = await upsertDiaryEntry(userId, values.entryDate || currentEntryDate, values.content, timezone); break
+          case 'finance': saved = await createFinanceEntry(userId, values.entryDate || currentEntryDate, values.label, validateModuleValues('finance', values).amountCents); break
           default: throw new Error('Choose a valid module.')
         }
       }
@@ -130,7 +146,7 @@ export default function useModuleData(module, user, timezone = 'UTC') {
     } finally {
       setSaving(false)
     }
-  }, [entryDate, module, timezone, userId])
+  }, [entryDate, module, timezone, userId, today])
 
   const update = useCallback(async (id, values) => {
     setSaving(true)

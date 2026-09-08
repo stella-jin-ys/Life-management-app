@@ -19,6 +19,16 @@ const demoState = {
   },
 }
 
+const emptyState = {
+  selectedMood: moods[1].id,
+  selectedFeeling: feelings[0].id,
+  highlights: [],
+  metrics: healthMetrics.map((metric) => ({ ...metric, value: 0 })),
+  goal: null,
+  signal: getComfortSignal(feelings[0].id),
+  supporting: { tasks: null, study: null, workout: null, sleep: null },
+}
+
 const retryMessage = 'We could not save that change. Please try again.'
 
 function savedSignal(feeling, signal) {
@@ -35,10 +45,10 @@ function temporaryHighlightId() {
 }
 
 export default function useDashboardData(user, profile) {
-  const [state, setState] = useState(demoState)
+  const [state, setState] = useState(() => user ? emptyState : demoState)
   const [loading, setLoading] = useState(Boolean(user))
   const [error, setError] = useState('')
-  const confirmedState = useRef(demoState)
+  const confirmedState = useRef(user ? emptyState : demoState)
   const mutationQueues = useRef(new Map())
   const mutationVersions = useRef(new Map())
   const timezone = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'

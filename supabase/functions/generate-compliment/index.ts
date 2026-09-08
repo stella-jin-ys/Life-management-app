@@ -74,7 +74,11 @@ Deno.serve(async (request) => {
     } catch { /* fallback is intentionally safe and deterministic */ }
   }
 
-  const { error: updateError } = await supabase.from('highlights').update({ compliment, compliment_status: status }).eq('id', highlight.id)
-  if (updateError) return json({ error: 'Could not save compliment' }, 500)
+  const { data: finalized, error: updateError } = await supabase.rpc('finalize_compliment_generation', {
+    p_highlight_id: highlight.id,
+    p_compliment: compliment,
+    p_status: status,
+  })
+  if (updateError || !finalized) return json({ error: 'Could not save compliment' }, 500)
   return json({ status, compliment })
 })

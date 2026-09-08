@@ -12,8 +12,7 @@ test('a signed-in user can save a highlight and a mood', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Good morning/ })).toBeVisible()
 
   await page.getByRole('button', { name: 'Tender' }).click()
-  await page.getByRole('button', { name: 'Add a highlight' }).click()
-  await page.getByLabel('What felt good or moved forward?').fill('I took a real lunch break.')
-  await page.getByRole('button', { name: 'Save highlight' }).click()
-  await expect(page.getByRole('heading', { name: 'I took a real lunch break.' })).toBeVisible()
+  await page.getByLabel('Quick highlight').fill('I took a real lunch break.')
+  await page.getByRole('button', { name: 'Save quick highlight' }).click()
+  await expect(page.getByLabel('Quick highlight')).toHaveValue('')
 })

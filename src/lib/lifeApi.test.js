@@ -163,30 +163,22 @@ describe('dashboard persistence', () => {
     }
   })
 
-  test('initializes goal and health rows for an empty authenticated account', async () => {
+  test('keeps an empty authenticated account free of fictional starter rows', async () => {
     supabaseState.client = createFakeClient({
       responses: {
         'mood_entries:select': { data: null, error: null },
         'highlights:select': { data: [], error: null },
         'health_entries:select': { data: null, error: null },
         'goals:select': { data: [], error: null },
-        'goals:insert': { data: { id: 'goal-1', title: 'A little more of what matters', why: 'Small actions that keep your priorities close.' }, error: null },
-        'milestones:insert': { data: [{ id: 'milestone-1', label: 'Read 12 books', position: 0, is_complete: true }], error: null },
-        'health_entries:insert': {
-          data: { hydration_glasses: 5, nourishing_meals: 2, sleep_minutes: 432, movement_minutes: 24 }, error: null,
-        },
         rpc: { data: [], error: null },
       },
     })
 
     const dashboard = await loadDashboard('user-1', 'UTC')
 
-    expect(dashboard.goal).toMatchObject({ id: 'goal-1', milestones: [{ id: 'milestone-1', complete: true }] })
-    expect(dashboard.metrics.find(({ id }) => id === 'water')).toMatchObject({ value: 5 })
-    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
-      expect.objectContaining({ table: 'goals', action: 'insert', payload: expect.objectContaining({ user_id: 'user-1' }) }),
-      expect.objectContaining({ table: 'health_entries', action: 'insert', payload: expect.objectContaining({ user_id: 'user-1' }) }),
-    ]))
+    expect(dashboard.goal).toBeNull()
+    expect(dashboard.metrics.find(({ id }) => id === 'water')).toMatchObject({ value: 0 })
+    expect(supabaseState.client.requests.some(({ action }) => action === 'insert')).toBe(false)
   })
 
   test('includes the authenticated user and local date in daily saves', async () => {
@@ -223,6 +215,7 @@ describe('dashboard persistence', () => {
           data: { id: 'highlight-1', content: 'Called a friend', created_at: '2026-01-01T09:00:00.000Z' },
           error: null,
         },
+        rpc: { data: true, error: null },
       },
     })
     supabaseState.client.functions.invoke.mockResolvedValue({ data: null })
@@ -233,8 +226,11 @@ describe('dashboard persistence', () => {
     expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
       expect.objectContaining({ table: 'feeling_checkins', action: 'insert', payload: { user_id: 'user-1', feeling: 'lonely' } }),
       expect.objectContaining({ table: 'highlights', action: 'insert', payload: { user_id: 'user-1', content: 'Called a friend' } }),
-      expect.objectContaining({ table: 'highlights', action: 'update', filters: expect.arrayContaining([['user_id', 'user-1']]) }),
     ]))
+    expect(supabaseState.client.rpc).toHaveBeenCalledWith('claim_compliment_generation', { p_highlight_id: 'highlight-1' })
+    expect(supabaseState.client.rpc).toHaveBeenCalledWith('finalize_compliment_generation', expect.objectContaining({
+      p_highlight_id: 'highlight-1', p_status: 'fallback',
+    }))
     expect(highlight).toMatchObject({
       compliment: '“Called a friend” counts. You noticed what helped, and that kind of attention builds a life you can feel.',
       complimentStatus: 'fallback',

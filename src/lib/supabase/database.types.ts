@@ -17,9 +17,15 @@ export type Database = {
       }
       highlights: {
         Row: { id: string; user_id: string; content: string; compliment: string | null; compliment_status: string; compliment_attempted_at: string | null; created_at: string; updated_at: string }
-        Insert: { id?: string; user_id: string; content: string; compliment?: string | null; compliment_status?: string; compliment_attempted_at?: string | null; created_at?: string; updated_at?: string }
-        Update: { id?: string; user_id?: string; content?: string; compliment?: string | null; compliment_status?: string; compliment_attempted_at?: string | null; created_at?: string; updated_at?: string }
+        Insert: { id?: string; user_id: string; content: string; created_at?: string; updated_at?: string }
+        Update: never
         Relationships: []
+      }
+      compliment_attempts: {
+        Row: { id: string; user_id: string; highlight_id: string; attempted_at: string }
+        Insert: never
+        Update: never
+        Relationships: [{ foreignKeyName: 'compliment_attempts_highlight_id_key'; columns: ['highlight_id']; isOneToOne: true; referencedRelation: 'highlights'; referencedColumns: ['id'] }]
       }
       feeling_checkins: {
         Row: { id: string; user_id: string; feeling: string; created_at: string }
@@ -50,6 +56,7 @@ export type Database = {
     Functions: {
       get_comfort_signal: { Args: { p_feeling: string }; Returns: { status: string; percentage: number | null; total_count: number | null }[] }
       claim_compliment_generation: { Args: { p_highlight_id: string }; Returns: boolean }
+      finalize_compliment_generation: { Args: { p_highlight_id: string; p_compliment: string; p_status: string }; Returns: boolean }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>

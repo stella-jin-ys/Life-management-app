@@ -1,6 +1,6 @@
 begin;
 
-select plan(18);
+select plan(19);
 
 insert into auth.users (id, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -8,6 +8,7 @@ values
   ('20000000-0000-0000-0000-000000000002', 'two@example.test', '{"display_name":"Two"}', now(), now());
 
 select has_table('public', 'highlights', 'highlights table exists');
+select has_table('public', 'compliment_attempts', 'compliment attempts table exists');
 select has_function('public', 'get_comfort_signal', array['text'], 'comfort signal RPC exists');
 select is((select display_name from public.profiles where id = '10000000-0000-0000-0000-000000000001'), 'One', 'signup trigger creates a profile');
 
@@ -72,6 +73,10 @@ reset role;
 insert into public.highlights (user_id, content, compliment_attempted_at)
 select '10000000-0000-0000-0000-000000000001', 'Rate limit fixture ' || series, now()
 from generate_series(1, 19) as generated(series);
+insert into public.compliment_attempts (user_id, highlight_id, attempted_at)
+select '10000000-0000-0000-0000-000000000001', id, now()
+from public.highlights
+where content like 'Rate limit fixture %';
 insert into public.highlights (id, user_id, content)
 values ('40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Rate limit target');
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);

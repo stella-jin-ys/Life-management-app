@@ -17,7 +17,7 @@ export const signIn = ({ email, password }) =>
 
 export const requestPasswordReset = (email) =>
   authClient().resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
+    redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}reset-password`,
   })
 
 export const updatePassword = (password) => authClient().updateUser({ password })

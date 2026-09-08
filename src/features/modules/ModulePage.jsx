@@ -65,7 +65,7 @@ function SleepChart({ entries, dates }) {
         <line x1="0" x2="280" y1={averageY} y2={averageY} className="sleep-average" />
         <polyline points={points} className="sleep-line" />
       </svg>
-      <span>Average {average ? `${Math.round(average / 60)}h ${average % 60}m` : '—'}</span>
+      <span>Average {average ? `${Math.floor(average / 60)}h ${average % 60}m` : '—'}</span>
     </div>
   )
 }
