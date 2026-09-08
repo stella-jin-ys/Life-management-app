@@ -64,4 +64,19 @@ describe('getSupabaseConfig', () => {
 
     expect(() => getSupabaseConfig({})).toThrow('Supabase browser configuration is missing')
   })
+
+  test('normalizes a REST API URL for browser auth', async () => {
+    const { getSupabaseConfig } = await loadClientModule({
+      VITE_SUPABASE_URL: 'https://example.supabase.co/rest/v1/',
+      VITE_SUPABASE_ANON_KEY: 'public-anon-key',
+    })
+
+    expect(getSupabaseConfig({
+      VITE_SUPABASE_URL: 'https://example.supabase.co/rest/v1/',
+      VITE_SUPABASE_ANON_KEY: 'public-anon-key',
+    })).toEqual({
+      url: 'https://example.supabase.co',
+      anonKey: 'public-anon-key',
+    })
+  })
 })

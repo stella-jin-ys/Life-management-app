@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 export function getSupabaseConfig(env) {
-  const url = env.VITE_SUPABASE_URL
+  const url = env.VITE_SUPABASE_URL?.replace(/\/rest\/v1\/?$/, '')
   const anonKey = env.VITE_SUPABASE_ANON_KEY
 
   if (!url || !anonKey) {
