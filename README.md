@@ -70,6 +70,7 @@ npm run db:reset
 npm run test:db
 npm run test:functions
 npm run test:e2e
+git diff --check
 ```
 
 `npm run verify` runs the frontend test suite and production build. `npm run verify:full` runs the full local stack checks and requires Docker, a running Supabase stack, and Deno.
