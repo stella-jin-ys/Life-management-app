@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { SunMedium } from 'lucide-react'
 
 import { requestPasswordReset, signIn, signUp } from './authApi.js'
 
@@ -54,8 +55,11 @@ export default function AuthPage({ mode = 'login' }) {
   return (
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="auth-title">
-        <div className="auth-mark" aria-hidden="true"><span /><span /></div>
-        <p className="eyebrow">Life management</p>
+        <div className="auth-brand">
+          <span className="auth-mark" aria-hidden="true"><SunMedium size={28} strokeWidth={1.7} /></span>
+          <span className="auth-brand-copy"><strong>Life management</strong><small>A little room for what matters</small></span>
+        </div>
+        <p className="eyebrow auth-eyebrow">{isForgot ? 'Password reset' : mode === 'signup' ? 'Start gently' : 'Sign in'}</p>
         <h1 id="auth-title">{isForgot ? 'Find your way back' : copy.title}</h1>
         <p className="auth-note">
           {isForgot ? 'We will send a quiet little link to reset your password.' : 'A private place to notice what is helping.'}

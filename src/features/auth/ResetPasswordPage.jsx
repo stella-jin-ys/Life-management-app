@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { SunMedium } from 'lucide-react'
 
 import { updatePassword } from './authApi.js'
 
@@ -27,7 +28,11 @@ export default function ResetPasswordPage() {
   return (
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="reset-title">
-        <p className="eyebrow">Life management</p>
+        <div className="auth-brand">
+          <span className="auth-mark" aria-hidden="true"><SunMedium size={28} strokeWidth={1.7} /></span>
+          <span className="auth-brand-copy"><strong>Life management</strong><small>A little room for what matters</small></span>
+        </div>
+        <p className="eyebrow auth-eyebrow">Password reset</p>
         <h1 id="reset-title">Choose a new password</h1>
         <p className="auth-note">A fresh start can be a very small thing.</p>
         <form onSubmit={submit}>
