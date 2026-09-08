@@ -26,16 +26,40 @@ Open `http://127.0.0.1:5173`. Local Auth email delivery is available through Inb
 
 The browser only receives `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. If AI compliments are enabled, copy `supabase/.env.example` to `supabase/.env.local`, add `OPENAI_API_KEY`, and serve the function with `npm run functions:serve`. The OpenAI key is never a Vite variable.
 
-## Hosted authentication
+## Hosted setup
 
-The GitHub Pages workflow automatically publishes the demo until both repository secrets below are configured. Once they exist, the next deployment uses the real login and Supabase-backed data flow:
+Create a Supabase project, then apply every checked-in migration from the repository root:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <project-ref>
+npx supabase db push
+```
+
+Deploy the authenticated `generate-compliment` Edge Function. It always returns a deterministic fallback when `OPENAI_API_KEY` is unset or the provider is unavailable. To enable generated compliments, create the ignored server-only file and upload its values as Edge Function secrets:
+
+```bash
+cp supabase/.env.example supabase/.env.local
+# Add a real OPENAI_API_KEY to supabase/.env.local before the next command.
+npx supabase secrets set --env-file supabase/.env.local
+npx supabase functions deploy generate-compliment
+```
+
+In Supabase Dashboard → Authentication → URL Configuration, set the Site URL to the deployed Pages root and add its password-reset route to Additional Redirect URLs. For this repository's Pages deployment, those values are:
+
+```text
+https://stella-jin-ys.github.io/Life-management-app/
+https://stella-jin-ys.github.io/Life-management-app/reset-password
+```
+
+The GitHub Pages workflow automatically publishes the demo until both repository secrets below are configured. Once both exist, the next deployment uses the real login and Supabase-backed data flow:
 
 ```text
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```
 
-Create a Supabase project, apply `supabase/migrations/202609010001_initial_schema.sql`, deploy the `generate-compliment` Edge Function if desired, then add the two values under the GitHub repository’s Settings → Secrets and variables → Actions. Never add a Supabase service-role key or `OPENAI_API_KEY` to Vite variables or the browser.
+Add those values under the GitHub repository’s Settings → Secrets and variables → Actions. `VITE_SUPABASE_ANON_KEY` is the project's public browser anon key; it is stored as an Actions secret only to keep build configuration out of the repository. Never add a Supabase service-role key or `OPENAI_API_KEY` to Vite variables, GitHub Pages secrets, or the browser.
 
 ## Verify
 
@@ -54,4 +78,4 @@ npm run test:e2e
 
 Every application table has Row Level Security enabled and is scoped to the signed-in user. Low Battery aggregates are based on recent app-member check-ins only; percentages are withheld until at least 10 recent check-ins exist. This is not population research or medical advice.
 
-Tasks, Finance, Study, Workout, Sleeping, Diary, and Settings are intentionally marked Coming soon while the core wellbeing workflow is being established.
+Tasks, Finance, Study, Workout, Sleeping, Diary, and Settings are available as authenticated routes and persist private user data through Supabase.
