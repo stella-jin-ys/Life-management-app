@@ -115,6 +115,28 @@ describe('authentication forms', () => {
     expect(authMocks.signUp.mock.calls[0][0]).toEqual(expect.objectContaining({ timezone: expect.any(String) }))
   })
 
+  test('shows signup validation details instead of a generic provider error', async () => {
+    renderPage('/signup')
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stella' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'stella@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Use at least 12 characters')
+    expect(authMocks.signUp).not.toHaveBeenCalled()
+  })
+
+  test('rejects an invalid signup email before calling the provider', async () => {
+    renderPage('/signup')
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stella' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'not-an-email' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse battery staple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid email address')
+    expect(authMocks.signUp).not.toHaveBeenCalled()
+  })
+
   test('shows a generic sign-in error', async () => {
     authMocks.signIn.mockResolvedValue({ error: new Error('provider detail') })
     renderPage('/login')

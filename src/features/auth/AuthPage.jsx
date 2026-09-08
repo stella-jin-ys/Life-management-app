@@ -9,6 +9,12 @@ const messages = {
   signup: { title: 'Make a little room', submit: 'Create account', prompt: 'Already have an account?', link: 'Sign in' },
 }
 
+function validationError(message) {
+  const error = new Error(message)
+  error.name = 'ValidationError'
+  return error
+}
+
 export default function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
   const [values, setValues] = useState({ name: '', email: '', password: '' })
@@ -31,9 +37,12 @@ export default function AuthPage({ mode = 'login' }) {
         return
       }
       if (mode === 'signup') {
-        if (values.name.trim().length < 1) throw new Error('Please add your name.')
-        if (values.name.trim().length > 80) throw new Error('Names can be up to 80 characters.')
-        if (values.password.length < 12) throw new Error('Use at least 12 characters for your password.')
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+          throw validationError('Enter a valid email address.')
+        }
+        if (values.name.trim().length < 1) throw validationError('Please add your name.')
+        if (values.name.trim().length > 80) throw validationError('Names can be up to 80 characters.')
+        if (values.password.length < 12) throw validationError('Use at least 12 characters for your password.')
         const { error } = await signUp({
           email: values.email.trim(),
           password: values.password,
@@ -47,8 +56,14 @@ export default function AuthPage({ mode = 'login' }) {
       const { error } = await signIn({ email: values.email.trim(), password: values.password })
       if (error) throw error
       navigate('/')
-    } catch {
-      setStatus({ busy: false, error: 'We could not complete that request. Check your details and try again.', note: '' })
+    } catch (error) {
+      setStatus({
+        busy: false,
+        error: error?.name === 'ValidationError'
+          ? error.message
+          : 'We could not complete that request. Check your details and try again.',
+        note: '',
+      })
     }
   }
 
