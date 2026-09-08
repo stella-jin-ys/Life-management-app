@@ -25,7 +25,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: auto; }
 body {
-  min-width: 320px;
+  min-width: 0;
   min-height: 100vh;
   margin: 0;
   background: linear-gradient(rgb(211 135 78 / 4%) 1px, transparent 1px), var(--canvas);
@@ -553,7 +553,7 @@ body { padding: 12px; background: #151515; }
 }
 @media (max-width: 700px) {
   body { padding: 0; }
-  .app-shell { width: min(100%, 320px); min-height: 100dvh; border-radius: 28px; }
+  .app-shell { width: 100%; min-height: 100dvh; border-radius: 0; }
   .mobile-header { min-height: 58px; padding: 10px 18px; border: 0; background: var(--canvas); }
   .mobile-wordmark { gap: 8px; flex: 1; }
   .mobile-wordmark .daylight-mark { width: 32px; flex-basis: 32px; }
@@ -581,7 +581,7 @@ body { padding: 12px; background: #151515; }
   .sleeping-tile .sleep-line { width: 100%; height: 42px; margin: 12px 0 0; }
   .support-value { margin-top: 8px; }
   .support-note { margin-top: 0; }
-  .mobile-bottom-nav { position: fixed; z-index: 25; right: auto; bottom: 0; left: 50%; display: grid; width: min(100%, 320px); grid-template-columns: repeat(4, 1fr); min-height: 62px; padding: 7px 12px 9px; border-top: 1px solid var(--line); background: rgb(251 254 250 / 96%); transform: translateX(-50%); }
+  .mobile-bottom-nav { position: fixed; z-index: 25; right: 0; bottom: 0; left: 0; display: grid; width: 100%; grid-template-columns: repeat(4, 1fr); min-height: 62px; padding: 7px 12px 9px; border-top: 1px solid var(--line); background: rgb(251 254 250 / 96%); }
   .mobile-bottom-nav button { display: grid; place-items: center; gap: 2px; border: 0; color: var(--muted); background: transparent; font-size: .58rem; }
   .mobile-bottom-nav button:first-child { color: var(--coral-deep); }
 }
@@ -641,7 +641,7 @@ body { padding: 12px; background: #151515; }
   .navigation-panel {
     right: auto;
     left: 50%;
-    width: min(100%, 320px);
+    width: 100%;
     padding: 20px 16px 72px;
     transform: translateX(-50%);
   }
@@ -755,7 +755,7 @@ body { padding: 12px; background: #151515; }
 .auth-card .form-note { color: #356744; background: #edf7e9; }
 
 @media (max-width: 700px) {
-  .auth-page { width: min(100%, 320px); min-height: 100dvh; padding: 20px 16px 28px; border-radius: 28px; }
+  .auth-page { width: 100%; min-height: 100dvh; padding: 20px 16px 28px; border-radius: 0; }
   .auth-card { padding: 24px 20px; border-radius: 20px; }
   .auth-card h1 { font-size: 2.15rem; }
 }
