@@ -8,7 +8,7 @@ vi.mock('../../lib/supabase/client.js', () => ({
   },
 }))
 
-import { updateProfile } from './authApi.js'
+import { signUp, updateProfile } from './authApi.js'
 
 function createSupabaseClient(result) {
   const request = {}
@@ -61,5 +61,26 @@ describe('updateProfile', () => {
     await expect(updateProfile('user-1', { displayName: 'Nova', timezone: undefined }))
       .rejects.toThrow('Choose a valid IANA timezone.')
     expect(fake.client.from).not.toHaveBeenCalled()
+  })
+})
+
+describe('signUp', () => {
+  test('sends confirmation links back to the deployed app', async () => {
+    const request = vi.fn(() => Promise.resolve({ data: { user: { id: 'user-1' } }, error: null }))
+    supabaseState.client = { auth: { signUp: request } }
+
+    await signUp({
+      email: 'stella@example.test',
+      password: 'correct horse battery staple',
+      displayName: 'Stella',
+      timezone: 'Europe/Stockholm',
+    })
+
+    expect(request).toHaveBeenCalledWith(expect.objectContaining({
+      email: 'stella@example.test',
+      options: expect.objectContaining({
+        emailRedirectTo: expect.stringMatching(/\/$/),
+      }),
+    }))
   })
 })

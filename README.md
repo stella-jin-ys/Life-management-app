@@ -52,6 +52,8 @@ https://stella-jin-ys.github.io/Life-management-app/
 https://stella-jin-ys.github.io/Life-management-app/reset-password
 ```
 
+If signup reports that verification was sent but no message arrives, check Supabase Dashboard → Authentication → SMTP Settings. Supabase's built-in sender is restricted to project-team addresses and has a low rate limit; configure custom SMTP for normal users, then check spam and confirm that the sender domain has SPF/DKIM/DMARC configured.
+
 The GitHub Pages workflow automatically publishes the demo until both repository secrets below are configured. Once both exist, the next deployment uses the real login and Supabase-backed data flow:
 
 ```text

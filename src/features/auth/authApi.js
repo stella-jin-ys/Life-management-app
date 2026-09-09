@@ -9,7 +9,10 @@ export const signUp = ({ email, password, displayName, timezone }) =>
   authClient().signUp({
     email,
     password,
-    options: { data: { display_name: displayName, timezone } },
+    options: {
+      data: { display_name: displayName, timezone },
+      emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+    },
   })
 
 export const signIn = ({ email, password }) =>
