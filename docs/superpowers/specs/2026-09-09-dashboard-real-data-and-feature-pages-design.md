@@ -4,6 +4,17 @@
 
 Make the authenticated Life Management dashboard show useful projections of each user's real Supabase data, and provide dedicated input/log pages for Highlights, Diet, Goals, Tasks, Study, Workout, Sleeping, Diary, and Finance.
 
+The immediate delivery target is a runnable local demo and a hosted deployment using browser-safe Supabase configuration. AI-generated compliments are a deferred integration point: the product must work completely with the deterministic fallback, and a hosted AI service can be connected later without changing the data model or user-facing logging flow.
+
+## Delivery and hosting strategy
+
+- Local demo mode remains available through the existing `VITE_DEMO_MODE` path and uses authored local data without requiring Supabase credentials.
+- Hosted mode uses the existing GitHub Pages deployment with Supabase Auth, Postgres, and RLS. The hosted build is real-data mode when both Supabase repository secrets are present.
+- The first implementation must not require an AI API key, Edge Function deployment, or provider-specific runtime to build, run, or save data.
+- Highlight compliments are stored with the highlight and use the deterministic fallback immediately. The compliment-generation call remains an optional seam that can be connected later to a hosted AI service or Supabase Edge Function.
+- Any future AI service must run server-side, receive only the minimum user-approved highlight context, enforce authentication and rate limits, and never expose a provider secret to Vite or the browser.
+- Verification must cover both local demo mode and hosted-style Supabase mode through mocked/integration tests; live deployment verification confirms the non-AI path.
+
 ## User-visible behavior
 
 ### Dashboard
@@ -154,8 +165,8 @@ With a signed-in account:
 4. Complete a task from the dashboard and confirm the Tasks page reflects it.
 5. Add study, workout, sleep, diary, finance, and goal entries from their pages and confirm each page reloads from Supabase.
 
-## Out of scope
+## Out of scope for the first delivery
 
-- Deploying the optional `generate-compliment` Edge Function; the current deterministic fallback remains valid.
+- Connecting or deploying an AI provider. The deterministic fallback is the supported compliment behavior until a later hosted AI service is explicitly added.
 - Treating the estimated Low Battery percentage as population research.
 - Adding social sharing, notifications, calendar sync, or medical/clinical recommendations.
