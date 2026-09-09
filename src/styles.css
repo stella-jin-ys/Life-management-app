@@ -614,7 +614,8 @@ body { padding: 12px; background: #151515; }
   .support-note { margin-top: 0; }
   .mobile-bottom-nav { position: fixed; z-index: 25; right: 0; bottom: 0; left: 0; display: grid; width: 100%; grid-template-columns: repeat(4, 1fr); min-height: 62px; padding: 7px 12px 9px; border-top: 1px solid var(--line); background: rgb(251 254 250 / 96%); }
   .mobile-bottom-nav button { display: grid; place-items: center; gap: 2px; border: 0; color: var(--muted); background: transparent; font-size: .58rem; }
-  .mobile-bottom-nav button:first-child { color: var(--coral-deep); }
+  .mobile-bottom-nav button { color: var(--muted); }
+  .mobile-bottom-nav button[aria-current='page'] { color: var(--coral-deep); }
 }
 @media (max-width: 959px) {
   .dashboard-intro { display: none; }
@@ -784,15 +785,28 @@ body { padding: 12px; background: #151515; }
 .highlight-action:hover, .highlight-action:focus-visible { color: var(--coral-deep); background: #fff0df; }
 .highlight-action:disabled, .cancel-highlight-edit:disabled { cursor: wait; opacity: .5; }
 .cancel-highlight-edit { color: var(--muted); background: var(--line); }
+.highlights-panel .panel-link { margin-top: 18px; }
 
 .settings-page, .module-page, .feature-page { width: min(100%, 1040px); box-sizing: border-box; }
 .settings-page { max-width: 1040px; }
-.settings-heading h1, .module-heading h1 { font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.08; }
+.settings-heading h1, .module-heading h1 { font-size: clamp(1.75rem, 3vw, 2.6rem); line-height: 1.08; }
 .settings-form { width: 100%; box-sizing: border-box; }
 .module-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .module-form { width: 100%; box-sizing: border-box; }
 .module-form input, .module-form textarea, .module-form select { box-sizing: border-box; }
 .module-entries { width: 100%; padding-top: 4px; }
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid var(--coral-deep);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.auth-card form input:focus, .quick-highlight-form input:focus {
+  outline: 2px solid var(--coral-deep);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.mobile-bottom-nav button[aria-current='page'] { color: var(--coral-deep); }
 
 @media (max-width: 700px) {
   .dashboard-grid > .panel { height: auto; }
@@ -800,7 +814,7 @@ body { padding: 12px; background: #151515; }
   .highlight-entry { width: 100%; grid-template-columns: 18px minmax(0, 1fr) auto; box-sizing: border-box; }
   .highlight-action { width: 32px; height: 32px; }
   .settings-page, .module-page, .feature-page { width: 100%; }
-  .settings-heading h1, .module-heading h1 { font-size: clamp(2rem, 10vw, 2.75rem); }
+  .settings-heading h1, .module-heading h1 { font-size: clamp(1.8rem, 8vw, 2.25rem); }
   .module-layout { gap: 18px; }
 }
 

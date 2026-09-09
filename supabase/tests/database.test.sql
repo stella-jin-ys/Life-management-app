@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(21);
 
 insert into auth.users (id, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -18,6 +18,14 @@ set local role authenticated;
 select lives_ok(
   $$insert into public.highlights (user_id, content) values (auth.uid(), 'A private win')$$,
   'user one can insert their highlight'
+);
+select lives_ok(
+  $$update public.highlights set content = 'An edited private win' where content = 'A private win' and user_id = auth.uid()$$,
+  'user one can edit their highlight content'
+);
+select lives_ok(
+  $$delete from public.highlights where content = 'An edited private win' and user_id = auth.uid()$$,
+  'user one can delete their highlight'
 );
 select throws_ok(
   $$insert into public.highlights (user_id, content) values ('20000000-0000-0000-0000-000000000002', 'Not mine')$$,
@@ -37,13 +45,17 @@ reset role;
 select set_config('request.jwt.claim.sub', '20000000-0000-0000-0000-000000000002', true);
 set local role authenticated;
 select is((select count(*)::integer from public.highlights), 0, 'user two sees no user-one highlights');
-select throws_ok(
-  $$update public.highlights set content = 'changed' where content = 'A private win'$$,
-  '42501', null, 'user two cannot update user-one data'
+select is(
+  (with changed as (
+    update public.highlights set content = 'changed' where content = 'A private win' returning id
+  ) select count(*)::integer from changed),
+  0, 'user two cannot update user-one data'
 );
-select throws_ok(
-  $$delete from public.highlights where content = 'A private win'$$,
-  '42501', null, 'user two cannot delete user-one data'
+select is(
+  (with deleted as (
+    delete from public.highlights where content = 'A private win' returning id
+  ) select count(*)::integer from deleted),
+  0, 'user two cannot delete user-one data'
 );
 
 reset role;

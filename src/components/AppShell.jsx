@@ -29,10 +29,10 @@ export default function AppShell({ activeSection, onNavigate, children, user, pr
         {activeSection === 'settings' && user ? <SettingsPage /> : children}
       </main>
       <nav className="mobile-bottom-nav" aria-label="Mobile shortcuts">
-        <button type="button" aria-label="Home" onClick={() => navigate('dashboard')}><Home size={17} /><span>Home</span></button>
-        <button type="button" aria-label="Highlights" onClick={() => navigate('highlights')}><Sparkles size={17} /><span>Highlights</span></button>
-        <button type="button" aria-label="Diet" onClick={() => navigate('health')}><Apple size={17} /><span>Diet</span></button>
-        <button type="button" aria-label="Goals" onClick={() => navigate('goals')}><Target size={17} /><span>Goals</span></button>
+        <button type="button" aria-label="Home" aria-current={activeSection === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}><Home size={17} /><span>Home</span></button>
+        <button type="button" aria-label="Highlights" aria-current={activeSection === 'highlights' ? 'page' : undefined} onClick={() => navigate('highlights')}><Sparkles size={17} /><span>Highlights</span></button>
+        <button type="button" aria-label="Diet" aria-current={activeSection === 'health' ? 'page' : undefined} onClick={() => navigate('health')}><Apple size={17} /><span>Diet</span></button>
+        <button type="button" aria-label="Goals" aria-current={activeSection === 'goals' ? 'page' : undefined} onClick={() => navigate('goals')}><Target size={17} /><span>Goals</span></button>
       </nav>
     </div>
   )

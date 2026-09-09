@@ -95,8 +95,6 @@ export default function HighlightsPanel({ highlights = [], onAddHighlight, onUpd
         </article>)}
       </div> : <p className="dashboard-empty">Your first small win can grow here.</p>}
 
-      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('highlights')}>View all highlights</button>}
-
       <form className="quick-highlight-form" onSubmit={submit}>
         <label className="visually-hidden" htmlFor="quick-highlight-entry">Quick highlight</label>
         <input id="quick-highlight-entry" aria-label="Quick highlight" placeholder="What went well today?"
@@ -106,6 +104,7 @@ export default function HighlightsPanel({ highlights = [], onAddHighlight, onUpd
         </button>
         {editingId && <button className="cancel-highlight-edit" type="button" aria-label="Cancel highlight edit" onClick={() => { setEditingId(null); setEntry('') }} disabled={saving}><X aria-hidden="true" size={15} /></button>}
       </form>
+      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('highlights')}>View all highlights</button>}
       {error && <p className="field-error" role="alert">{error}</p>}
 
     </section>

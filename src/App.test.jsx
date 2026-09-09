@@ -79,6 +79,20 @@ test('shows every primary destination and marks the selected destination', () =>
   ).toHaveAttribute('aria-current', 'page')
 })
 
+test('places the highlights link after the quick input and exposes selected mobile navigation state', () => {
+  renderApp(<App />)
+
+  const input = screen.getByRole('textbox', { name: 'Quick highlight' })
+  const viewAll = screen.getByRole('button', { name: 'View all highlights' })
+  expect(input.compareDocumentPosition(viewAll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+  const mobileHome = screen.getAllByRole('button', { name: 'Home' }).at(-1)
+  const mobileHighlights = screen.getAllByRole('button', { name: 'Highlights' }).at(-1)
+  expect(mobileHome).toHaveAttribute('aria-current', 'page')
+  fireEvent.click(mobileHighlights)
+  expect(mobileHighlights).toHaveAttribute('aria-current', 'page')
+})
+
 test('projects the latest highlights, meals, and task rows onto the dashboard', async () => {
   api.loadDashboard.mockResolvedValue(authenticatedDashboard({
     highlights: [1, 2, 3, 4, 5].map((id) => ({ id, entry: `Win ${id}`, compliment: `Good ${id}`, time: 'Now' })),
