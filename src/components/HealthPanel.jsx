@@ -1,5 +1,7 @@
 import { Activity, Apple, Droplets, MoonStar, Utensils } from 'lucide-react'
 
+import { dashboardCardProps } from './dashboardCard.js'
+
 const metricIcons = { water: Droplets, meals: Utensils, sleep: MoonStar, movement: Activity }
 
 export default function HealthPanel({ metrics, meals = [], mealFeedback, onAdjustMetric, onOpenPage }) {
@@ -9,7 +11,8 @@ export default function HealthPanel({ metrics, meals = [], mealFeedback, onAdjus
   )
 
   return (
-    <section className="panel health-panel" id="health" aria-labelledby="health-title">
+    <section className="panel health-panel dashboard-card" id="health" aria-labelledby="health-title"
+      {...dashboardCardProps(onOpenPage, 'health', 'Diet & Health')}>
       <div className="panel-heading">
         <div>
           <span className="section-symbol symbol-moss"><Apple aria-hidden="true" size={18} /></span>
@@ -21,8 +24,6 @@ export default function HealthPanel({ metrics, meals = [], mealFeedback, onAdjus
         <strong>{meals.length ? meals.slice(0, 2).map(({ food }) => food).join(' · ') : 'No meals logged yet'}</strong>
         <span>{mealFeedback?.feedback || 'Add a meal when it feels useful.'}</span>
       </div>
-
-      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('health')}>View diet & health</button>}
 
       <div className="health-layout">
         <div className="health-orbit" style={{ '--progress': `${average * 3.6}deg` }}

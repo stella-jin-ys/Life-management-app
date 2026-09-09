@@ -1,9 +1,11 @@
 import { BookOpen, CheckCircle2, Dumbbell, Moon } from 'lucide-react'
 
-function Tile({ id, title, icon: Icon, children, className = '' }) {
+import { dashboardCardProps } from './dashboardCard.js'
+
+function Tile({ id, title, icon: Icon, children, className = '', onOpenPage }) {
   return (
-    <section className={`panel support-tile ${className}`} id={id}
-      aria-labelledby={`${title.toLowerCase()}-tile-title`}>
+    <section className={`panel support-tile dashboard-card ${className}`} id={id}
+      aria-labelledby={`${title.toLowerCase()}-tile-title`} {...dashboardCardProps(onOpenPage, id, title)}>
       <div className="support-heading">
         <span className="support-icon"><Icon aria-hidden="true" size={15} /></span>
         <h2 id={`${title.toLowerCase()}-tile-title`}>{title}</h2>
@@ -45,7 +47,7 @@ export default function SupportingTiles({ summaries = {}, onToggleTask, onOpenPa
   const { tasks, study, workout, sleep } = summaries
   return (
     <>
-      <Tile id="tasks" title="Tasks" icon={CheckCircle2} className="tasks-tile">
+      <Tile id="tasks" title="Tasks" icon={CheckCircle2} className="tasks-tile" onOpenPage={onOpenPage}>
         {tasks ? <>
           <span className="support-copy">{tasks.complete} of {tasks.total} done</span>
           <span className="mini-progress"><span style={{ transform: `scaleX(${tasks.total ? tasks.complete / tasks.total : 0})` }} /></span>
@@ -55,28 +57,24 @@ export default function SupportingTiles({ summaries = {}, onToggleTask, onOpenPa
               <span>{task.title}</span>
             </label>)}
           </div>
-          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('tasks')}>View tasks</button>}
         </> : <span className="support-empty">No tasks yet</span>}
       </Tile>
-      <Tile id="study" title="Study" icon={BookOpen} className="study-tile">
+      <Tile id="study" title="Study" icon={BookOpen} className="study-tile" onOpenPage={onOpenPage}>
         {study ? <>
           <strong className="support-value">{study.topic}</strong>
           <span className="support-note">Logged today</span>
-          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('study')}>View study</button>}
         </> : <span className="support-empty">No study logged today</span>}
       </Tile>
-      <Tile id="workout" title="Workout" icon={Dumbbell} className="workout-tile">
+      <Tile id="workout" title="Workout" icon={Dumbbell} className="workout-tile" onOpenPage={onOpenPage}>
         {workout ? <>
           <WorkoutChart days={workout.days} />
           <span className="support-note">{workout.todayMinutes ? `${workout.todayMinutes} min today` : 'No workout today'}</span>
-          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('workout')}>View workout</button>}
         </> : <span className="support-empty">No workouts logged yet</span>}
       </Tile>
-      <Tile id="sleeping" title="Sleeping" icon={Moon} className="sleeping-tile">
+      <Tile id="sleeping" title="Sleeping" icon={Moon} className="sleeping-tile" onOpenPage={onOpenPage}>
         {sleep ? <>
           <div className="sleep-summary"><strong>{sleep.todayMinutes ? formatMinutes(sleep.todayMinutes) : 'No sleep today'}</strong><span>avg {formatMinutes(sleep.averageMinutes)}</span></div>
           <SleepChart days={sleep.days} />
-          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('sleeping')}>View sleep</button>}
         </> : <span className="support-empty">No sleep logged yet</span>}
       </Tile>
     </>

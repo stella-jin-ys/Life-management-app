@@ -1,10 +1,13 @@
 import { ArrowRight, Check, Flag } from 'lucide-react'
 
+import { dashboardCardProps } from './dashboardCard.js'
+
 export default function GoalsPanel({ goal, onToggleMilestone, onOpenPage }) {
   const next = goal?.milestones.find(({ complete }) => !complete)
 
   return (
-    <section className="panel goals-panel" id="goals" aria-labelledby="goals-title">
+    <section className="panel goals-panel dashboard-card" id="goals" aria-labelledby="goals-title"
+      {...dashboardCardProps(onOpenPage, 'goals', 'Goals')}>
       <div className="panel-heading">
         <div>
           <span className="section-symbol symbol-gold"><Flag aria-hidden="true" size={18} /></span>
@@ -31,7 +34,6 @@ export default function GoalsPanel({ goal, onToggleMilestone, onOpenPage }) {
         <p>{next ? next.label : 'Pause and notice how far you came.'}</p>
         <ArrowRight aria-hidden="true" size={18} />
       </div>
-      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('goals')}>View goal board</button>}
     </section>
   )
 }

@@ -79,12 +79,35 @@ test('shows every primary destination and marks the selected destination', () =>
   ).toHaveAttribute('aria-current', 'page')
 })
 
-test('places the highlights link after the quick input and exposes selected mobile navigation state', () => {
-  renderApp(<App />)
+test('navigates from dashboard cards without visible view buttons', () => {
+  renderApp(<><App /><LocationProbe /></>)
+
+  expect(screen.queryByRole('button', { name: 'View all highlights' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'View diet & health' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'View goal board' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'View tasks' })).not.toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Highlights' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Diet' })).toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('link', { name: 'Highlights' }))
+  expect(screen.getByTestId('location')).toHaveTextContent('/highlights')
+})
+
+test('keeps dashboard card controls independent from card navigation', () => {
+  renderApp(<><App /><LocationProbe /></>)
 
   const input = screen.getByRole('textbox', { name: 'Quick highlight' })
-  const viewAll = screen.getByRole('button', { name: 'View all highlights' })
-  expect(input.compareDocumentPosition(viewAll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  fireEvent.click(input)
+  expect(screen.getByTestId('location')).toHaveTextContent('/')
+
+  const goalCheckbox = screen.getByRole('checkbox', { name: 'Run a 10k' })
+  fireEvent.click(goalCheckbox)
+  expect(screen.getByTestId('location')).toHaveTextContent('/')
+  expect(goalCheckbox).toBeChecked()
+})
+
+test('exposes selected mobile navigation state', () => {
+  renderApp(<App />)
 
   const mobileHome = screen.getAllByRole('button', { name: 'Home' }).at(-1)
   const mobileHighlights = screen.getAllByRole('button', { name: 'Highlights' }).at(-1)

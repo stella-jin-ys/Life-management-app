@@ -1,6 +1,8 @@
 import { Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 
+import { dashboardCardProps } from './dashboardCard.js'
+
 export default function HighlightsPanel({ highlights = [], onAddHighlight, onUpdateHighlight, onDeleteHighlight, onOpenPage, isDemo = false }) {
   const [entry, setEntry] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -69,7 +71,8 @@ export default function HighlightsPanel({ highlights = [], onAddHighlight, onUpd
   }
 
   return (
-    <section className="panel highlights-panel" id="highlights" aria-labelledby="highlights-title">
+    <section className="panel highlights-panel dashboard-card" id="highlights" aria-labelledby="highlights-title"
+      {...dashboardCardProps(onOpenPage, 'highlights', 'Highlights')}>
       <div className="panel-heading">
         <div>
           <span className="section-symbol symbol-coral"><Sparkles aria-hidden="true" size={18} /></span>
@@ -105,7 +108,6 @@ export default function HighlightsPanel({ highlights = [], onAddHighlight, onUpd
         {editingId && <button className="cancel-highlight-edit" type="button" aria-label="Cancel highlight edit" onClick={() => { setEditingId(null); setEntry('') }} disabled={saving}><X aria-hidden="true" size={15} /></button>}
       </form>
       {error && <p className="field-error" role="alert">{error}</p>}
-      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('highlights')}>View all highlights</button>}
 
     </section>
   )

@@ -739,8 +739,8 @@ body { padding: 12px; background: #151515; }
 .meal-feedback p { margin: 5px 0 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
 .meal-log-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
 .meal-log-entry small { color: var(--muted); font-size: .72rem; text-transform: capitalize; }
-.text-button, .panel-link { border: 0; color: var(--coral-deep); background: transparent; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
-.text-button:hover, .panel-link:hover { text-decoration: underline; }
+.text-button { border: 0; color: var(--coral-deep); background: transparent; font: inherit; font-size: .72rem; font-weight: 700; cursor: pointer; }
+.text-button:hover { text-decoration: underline; }
 .health-page-metrics { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
 .health-page-metrics .metric-label { grid-template-columns: 1fr auto; }
 .health-page-metrics .metric-label > span:first-child { grid-column: 1; }
@@ -765,7 +765,6 @@ body { padding: 12px; background: #151515; }
 .highlight-log-entry small { display: block; margin-top: 4px; color: var(--muted); font-size: .72rem; }
 .highlight-log-entry p { margin: 8px 0 0; color: var(--muted); font-family: 'Fraunces', Georgia, serif; font-size: .88rem; line-height: 1.5; }
 .data-loading { color: var(--muted); font-size: .8rem; }
-.panel-link { display: inline-flex; width: fit-content; margin-top: auto; padding: 0; }
 .dashboard-empty { margin: 10px 0 0; color: var(--muted); font-size: .68rem; line-height: 1.35; }
 .task-preview-list { display: grid; gap: 6px; margin-top: 8px; }
 .task-preview { display: flex; gap: 7px; align-items: center; min-width: 0; color: var(--ink); font-size: .68rem; line-height: 1.2; }
@@ -777,17 +776,23 @@ body { padding: 12px; background: #151515; }
 .dashboard-grid { align-items: stretch; grid-auto-rows: minmax(150px, auto); }
 .dashboard-grid > .panel { align-self: stretch; width: 100%; min-width: 0; height: 100%; box-sizing: border-box; }
 .dashboard-grid > .panel { display: flex; flex-direction: column; }
+.dashboard-card { cursor: pointer; transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.dashboard-card:focus-visible { outline: 2px solid var(--coral-deep); outline-offset: 3px; }
+.dashboard-card:active { transform: translateY(1px); }
+@media (hover: hover) {
+  .dashboard-card:hover { background: #fff0df; box-shadow: 0 12px 26px rgb(60 70 55 / 10%); }
+}
 .highlights-panel { min-height: 0; }
 .highlight-entry { width: 100%; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; min-width: 0; overflow: hidden; }
+.highlight-feed { width: 100%; min-width: 0; align-self: stretch; }
 .highlight-entry-copy { width: 100%; min-width: 0; overflow: hidden; }
 .highlight-entry-copy strong { display: block; max-width: 100%; overflow: hidden; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-.highlight-entry-actions { display: flex; gap: 3px; align-items: center; }
+.highlight-entry-actions { display: flex; min-width: max-content; gap: 3px; align-items: center; }
 .highlight-action, .cancel-highlight-edit { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; }
 .highlight-action:hover, .highlight-action:focus-visible { color: var(--coral-deep); background: #fff0df; }
 .highlight-action:disabled, .cancel-highlight-edit:disabled { cursor: wait; opacity: .5; }
 .cancel-highlight-edit { color: var(--muted); background: var(--line); }
 .highlights-panel .quick-highlight-form { margin-top: 0; }
-.highlights-panel .panel-link { margin-top: auto; padding-top: 18px; }
 
 .settings-page, .module-page, .feature-page { width: min(100%, 1040px); box-sizing: border-box; }
 .settings-page { max-width: 1040px; }
@@ -813,11 +818,15 @@ input:focus, textarea:focus, select:focus {
 @media (max-width: 700px) {
   .dashboard-grid > .panel { height: auto; }
   .highlight-feed { width: 100%; }
-  .highlight-entry { width: 100%; grid-template-columns: 18px minmax(0, 1fr) auto; box-sizing: border-box; }
+  .highlight-entry { width: 100%; grid-template-columns: minmax(0, 1fr) auto; box-sizing: border-box; }
   .highlight-action { width: 32px; height: 32px; }
   .settings-page, .module-page, .feature-page { width: 100%; }
   .settings-heading h1, .module-heading h1 { font-size: clamp(1.8rem, 8vw, 2.25rem); }
   .module-layout { gap: 18px; }
+}
+
+@media (min-width: 701px) and (max-width: 767px) {
+  .highlight-entry { grid-template-columns: minmax(0, 1fr) auto; }
 }
 
 @media (max-width: 767px) {
