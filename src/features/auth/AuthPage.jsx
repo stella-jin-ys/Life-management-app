@@ -43,13 +43,17 @@ export default function AuthPage({ mode = 'login' }) {
         if (values.name.trim().length < 1) throw validationError('Please add your name.')
         if (values.name.trim().length > 80) throw validationError('Names can be up to 80 characters.')
         if (values.password.length < 12) throw validationError('Use at least 12 characters for your password.')
-        const { error } = await signUp({
+        const { data, error } = await signUp({
           email: values.email.trim(),
           password: values.password,
           displayName: values.name.trim(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
         })
         if (error) throw error
+        if (data?.session) {
+          navigate('/')
+          return
+        }
         setStatus({ busy: false, error: '', note: 'Check your email to verify your account, then come back to sign in.' })
         return
       }

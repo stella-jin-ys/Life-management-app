@@ -115,6 +115,24 @@ describe('authentication forms', () => {
     expect(authMocks.signUp.mock.calls[0][0]).toEqual(expect.objectContaining({ timezone: expect.any(String) }))
   })
 
+  test('takes a confirmed signup directly to the dashboard', async () => {
+    authMocks.signUp.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } }, error: null })
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <Routes>
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route path="/" element={<p>Dashboard</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stella' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'stella@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse battery staple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByText('Dashboard')).toBeInTheDocument()
+  })
+
   test('shows signup validation details instead of a generic provider error', async () => {
     renderPage('/signup')
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stella' } })
