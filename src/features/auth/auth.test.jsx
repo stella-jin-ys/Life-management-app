@@ -133,6 +133,17 @@ describe('authentication forms', () => {
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })
 
+  test('explains when the signup email already has an account', async () => {
+    authMocks.signUp.mockResolvedValue({ error: { code: 'user_already_exists', status: 422 } })
+    renderPage('/signup')
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stella' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'stella@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse battery staple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('An account with this email already exists')
+  })
+
   test('shows signup validation details instead of a generic provider error', async () => {
     renderPage('/signup')
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Stella' } })

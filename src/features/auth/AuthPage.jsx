@@ -15,6 +15,22 @@ function validationError(message) {
   return error
 }
 
+function providerErrorMessage(error) {
+  const code = error?.code || ''
+  const message = error?.message || ''
+
+  if (code === 'user_already_exists' || /already registered/i.test(message)) {
+    return 'An account with this email already exists. Try signing in instead.'
+  }
+  if (code === 'database_error' || /database error saving new user/i.test(message)) {
+    return 'Account setup is not ready yet. Please try again, and if it continues, check the Supabase database migration.'
+  }
+  if (/Supabase browser configuration is missing/i.test(message)) {
+    return 'The hosted app is missing its Supabase configuration. Please contact the app owner.'
+  }
+  return 'We could not complete that request. Check your details and try again.'
+}
+
 export default function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
   const [values, setValues] = useState({ name: '', email: '', password: '' })
@@ -65,7 +81,7 @@ export default function AuthPage({ mode = 'login' }) {
         busy: false,
         error: error?.name === 'ValidationError'
           ? error.message
-          : 'We could not complete that request. Check your details and try again.',
+          : providerErrorMessage(error),
         note: '',
       })
     }
