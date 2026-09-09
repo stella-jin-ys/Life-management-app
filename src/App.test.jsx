@@ -1,14 +1,16 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
+  createMeal: vi.fn(),
   createHighlight: vi.fn(),
   loadDashboard: vi.fn(),
   saveFeeling: vi.fn(),
   saveHealth: vi.fn(),
   saveMilestone: vi.fn(),
   saveMood: vi.fn(),
+  updateTask: vi.fn(),
 }))
 
 vi.mock('./lib/lifeApi.js', () => api)
@@ -17,6 +19,11 @@ import App from './App.jsx'
 
 function renderApp(ui) {
   return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
+function LocationProbe() {
+  const location = useLocation()
+  return <output data-testid="location">{location.pathname}</output>
 }
 
 function authenticatedDashboard(overrides = {}) {
@@ -70,6 +77,34 @@ test('shows every primary destination and marks the selected destination', () =>
   ).toHaveAttribute('aria-current', 'page')
 })
 
+test('projects the latest highlights, meals, and task rows onto the dashboard', async () => {
+  api.loadDashboard.mockResolvedValue(authenticatedDashboard({
+    highlights: [1, 2, 3, 4, 5].map((id) => ({ id, entry: `Win ${id}`, compliment: `Good ${id}`, time: 'Now' })),
+    meals: [{ id: 'meal-1', food: 'Rice bowl' }],
+    mealFeedback: { score: 50, feedback: 'Add a source of protein to round out the day.' },
+    supporting: {
+      tasks: {
+        complete: 0,
+        total: 2,
+        rows: [{ id: 'task-1', title: 'Read', dueDate: 'Today', isComplete: false }, { id: 'task-2', title: 'Walk', dueDate: 'Today', isComplete: false }],
+      },
+      study: null,
+      workout: null,
+      sleep: null,
+    },
+  }))
+  api.updateTask.mockResolvedValue({ id: 'task-1', is_complete: true })
+
+  renderApp(<App user={{ id: 'user-1', email: 'stella@example.com' }} profile={{ timezone: 'Europe/Stockholm' }} />)
+
+  await waitFor(() => expect(screen.getByText('Win 1')).toBeVisible())
+  expect(screen.getByText('Win 4')).toBeVisible()
+  expect(screen.queryByText('Win 5')).not.toBeInTheDocument()
+  expect(screen.getByText('Rice bowl')).toBeVisible()
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Read' }))
+  await waitFor(() => expect(api.updateTask).toHaveBeenCalledWith('user-1', 'task-1', true))
+})
+
 test('keeps every destination enabled in the side menu', () => {
   renderApp(<App />)
 
@@ -89,14 +124,12 @@ test('keeps every destination enabled in the side menu', () => {
   expect(screen.getAllByRole('button', { name: 'Tasks' })[0]).toHaveAttribute('aria-current', 'page')
 })
 
-test('moves the matching dashboard section into view from the sidebar', () => {
-  const scrollIntoView = vi.fn()
-  Element.prototype.scrollIntoView = scrollIntoView
-  renderApp(<App />)
+test('navigates feature destinations through the router', () => {
+  renderApp(<><App /><LocationProbe /></>)
 
   fireEvent.click(screen.getAllByRole('button', { name: 'Highlights' })[0])
 
-  expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+  expect(screen.getByTestId('location')).toHaveTextContent('/highlights')
 })
 
 test('toggles the compact navigation menu', () => {

@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { feelings, healthMetrics, initialGoal, initialHighlights, moods } from '../../data/demoData.js'
+import { localDate } from './date.js'
 import { getComfortSignal } from '../../lib/dashboard.js'
-import { createHighlight, loadDashboard, saveFeeling, saveHealth, saveMilestone, saveMood } from '../../lib/lifeApi.js'
+import { createHighlight, createMeal, loadDashboard, saveFeeling, saveHealth, saveMilestone, saveMood, updateTask } from '../../lib/lifeApi.js'
+import { getEstimatedFeelingSignal, getMealBalance } from '../../lib/wellbeing.js'
 
 const demoState = {
   selectedMood: moods[1].id,
   selectedFeeling: feelings[0].id,
   highlights: initialHighlights,
+  meals: [],
+  mealFeedback: getMealBalance([]),
   metrics: healthMetrics,
   goal: initialGoal,
   signal: getComfortSignal(feelings[0].id),
   supporting: {
-    tasks: { complete: 3, total: 5 },
+    tasks: { complete: 3, total: 5, rows: [
+      { id: 'demo-task-1', title: 'Make a nourishing lunch', dueDate: 'Today', isComplete: true },
+      { id: 'demo-task-2', title: 'Take a short walk', dueDate: 'Today', isComplete: false },
+    ] },
     study: { topic: 'UI design', entryDate: 'demo' },
     workout: { days: [14, 7, 28, 14, 7, 28, 35], todayMinutes: 30 },
     sleep: { days: [420, 400, 450, 430, 410, 440, 440], todayMinutes: 440, averageMinutes: 420 },
@@ -23,6 +30,8 @@ const emptyState = {
   selectedMood: moods[1].id,
   selectedFeeling: feelings[0].id,
   highlights: [],
+  meals: [],
+  mealFeedback: getMealBalance([]),
   metrics: healthMetrics.map((metric) => ({ ...metric, value: 0 })),
   goal: null,
   signal: getComfortSignal(feelings[0].id),
@@ -31,11 +40,14 @@ const emptyState = {
 
 const retryMessage = 'We could not save that change. Please try again.'
 
-function savedSignal(feeling, signal) {
+function savedSignal(feeling, signal, entryDate) {
+  const estimate = getEstimatedFeelingSignal(feeling, entryDate)
   return {
     ...getComfortSignal(feeling),
+    ...estimate,
     ...signal,
-    percentage: signal?.status === 'available' ? signal.percentage : null,
+    percentage: signal?.status === 'available' ? signal.percentage : estimate.percentage,
+    status: signal?.status === 'available' ? 'available' : 'estimated',
   }
 }
 
@@ -106,7 +118,7 @@ export default function useDashboardData(user, profile) {
       setState((current) => ({ ...current, selectedFeeling: feeling }))
       if (user) persist('feeling', async () => {
         const signal = await saveFeeling(user.id, feeling)
-        return signal ? savedSignal(feeling, signal) : null
+        return savedSignal(feeling, signal, localDate(timezone))
       }, (signal, isLatest) => {
         const next = {
           ...confirmedState.current,
@@ -121,6 +133,40 @@ export default function useDashboardData(user, profile) {
         signal: confirmedState.current.signal,
       })))
       else setState((current) => ({ ...current, signal: getComfortSignal(feeling) }))
+    },
+    addMeal: async (values) => {
+      const entryDate = localDate(timezone)
+      if (!user) {
+        const meal = { id: `demo-meal-${Date.now()}`, entry_date: entryDate, ...values }
+        setState((current) => {
+          const meals = [meal, ...current.meals]
+          return { ...current, meals, mealFeedback: getMealBalance(meals) }
+        })
+        return meal
+      }
+      const meal = await createMeal(user.id, { ...values, entryDate })
+      setState((current) => {
+        const meals = [meal, ...current.meals]
+        return { ...current, meals, mealFeedback: getMealBalance(meals) }
+      })
+      return meal
+    },
+    toggleTask: (id, complete) => {
+      setState((current) => {
+        if (!current.supporting.tasks) return current
+        const rows = current.supporting.tasks.rows.map((task) => task.id === id ? { ...task, isComplete: complete } : task)
+        const completed = rows.filter(({ isComplete }) => isComplete).length
+        return { ...current, supporting: { ...current.supporting, tasks: { ...current.supporting.tasks, rows, complete: completed } } }
+      })
+      if (user) persist(`task:${id}`, () => updateTask(user.id, id, complete), () => {
+        const tasks = confirmedState.current.supporting.tasks
+        if (!tasks) return
+        const rows = tasks.rows.map((task) => task.id === id ? { ...task, isComplete: complete } : task)
+        confirmedState.current = {
+          ...confirmedState.current,
+          supporting: { ...confirmedState.current.supporting, tasks: { ...tasks, rows, complete: rows.filter(({ isComplete }) => isComplete).length } },
+        }
+      }, () => setState((current) => ({ ...current, supporting: { ...current.supporting, tasks: confirmedState.current.supporting.tasks } })))
     },
     addHighlight: (content) => {
       if (!user) {

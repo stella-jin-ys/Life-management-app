@@ -2,8 +2,7 @@ import { Activity, Apple, Droplets, MoonStar, Utensils } from 'lucide-react'
 
 const metricIcons = { water: Droplets, meals: Utensils, sleep: MoonStar, movement: Activity }
 
-export default function HealthPanel({ metrics, onAdjustMetric }) {
-  const meals = metrics.find(({ id }) => id === 'meals')
+export default function HealthPanel({ metrics, meals = [], mealFeedback, onAdjustMetric, onOpenPage }) {
   const average = Math.round(
     metrics.reduce((total, metric) => total + Math.min(metric.value / metric.target, 1), 0) /
       metrics.length * 100,
@@ -19,9 +18,11 @@ export default function HealthPanel({ metrics, onAdjustMetric }) {
         </div>
       </div>
       <div className="diet-summary">
-        <strong>{meals?.value ? `${meals.value} nourishing meal${meals.value === 1 ? '' : 's'} logged` : 'No meals logged yet'}</strong>
-        <span>{meals?.value ? 'A gentle record of today.' : 'Add a meal when it feels useful.'}</span>
+        <strong>{meals.length ? meals.slice(0, 2).map(({ food }) => food).join(' · ') : 'No meals logged yet'}</strong>
+        <span>{mealFeedback?.feedback || 'Add a meal when it feels useful.'}</span>
       </div>
+
+      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('health')}>View diet & health</button>}
 
       <div className="health-layout">
         <div className="health-orbit" style={{ '--progress': `${average * 3.6}deg` }}

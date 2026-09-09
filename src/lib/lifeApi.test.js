@@ -9,12 +9,18 @@ vi.mock('./supabase/client.js', () => ({
 }))
 
 import {
+  createGoal,
+  createMilestone,
+  createMeal,
   createHighlight,
   loadDashboard,
+  listGoals,
+  listMeals,
   saveFeeling,
   saveHealth,
   saveMilestone,
   saveMood,
+  updateGoalStatus,
 } from './lifeApi.js'
 import { localDate } from '../features/dashboard/date.js'
 
@@ -102,6 +108,76 @@ describe('localDate', () => {
 })
 
 describe('dashboard persistence', () => {
+  test('lists and creates user-scoped meals', async () => {
+    supabaseState.client = createFakeClient({
+      responses: {
+        'meal_entries:select': { data: [{ id: 'meal-1', food: 'Rice bowl' }], error: null },
+        'meal_entries:insert': { data: { id: 'meal-2', food: 'Yogurt' }, error: null },
+      },
+    })
+
+    await listMeals('user-1', '2026-01-01')
+    await createMeal('user-1', {
+      entryDate: '2026-01-01', mealType: 'breakfast', food: ' Yogurt ',
+      hasProduce: true, hasProtein: true, hasCarbohydrate: false, hasHealthyFat: false,
+    })
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({ table: 'meal_entries', action: 'select', filters: [['user_id', 'user-1'], ['entry_date', '2026-01-01']] }),
+      expect.objectContaining({
+        table: 'meal_entries',
+        action: 'insert',
+        payload: expect.objectContaining({ user_id: 'user-1', entry_date: '2026-01-01', meal_type: 'breakfast', food: 'Yogurt', has_produce: true }),
+      }),
+    ]))
+  })
+
+  test('lists and creates goals with user-scoped payloads', async () => {
+    supabaseState.client = createFakeClient({
+      responses: {
+        'goals:insert': { data: { id: 'goal-1', title: 'Learn gently', why: 'Make room for curiosity', milestones: [] }, error: null },
+        'milestones:insert': { data: { id: 'milestone-1', goal_id: 'goal-1', label: 'Read one page', position: 0 }, error: null },
+        'goals:update': { data: { id: 'goal-1', title: 'Learn gently', why: 'Make room for curiosity', status: 'completed', milestones: [] }, error: null },
+      },
+    })
+
+    await listGoals('user-1')
+    await createGoal('user-1', '  Learn gently ', 'Make room for curiosity')
+    await createMilestone('goal-1', 'Read one page', 0)
+    await saveMilestone('goal-1', true)
+    await updateGoalStatus('goal-1', 'completed')
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({ table: 'goals', action: 'select', filters: [['user_id', 'user-1']] }),
+      expect.objectContaining({ table: 'goals', action: 'insert', payload: { user_id: 'user-1', title: 'Learn gently', why: 'Make room for curiosity' } }),
+      expect.objectContaining({ table: 'milestones', action: 'insert', payload: { goal_id: 'goal-1', label: 'Read one page', position: 0 } }),
+      expect.objectContaining({ table: 'milestones', action: 'update', filters: [['id', 'goal-1']] }),
+      expect.objectContaining({ table: 'goals', action: 'update', filters: [['id', 'goal-1']], payload: { status: 'completed' } }),
+    ]))
+  })
+
+  test('limits dashboard highlights and maps task rows and meal feedback inputs', async () => {
+    supabaseState.client = createFakeClient({
+      responses: {
+        'mood_entries:select': { data: null, error: null },
+        'highlights:select': { data: [5, 4, 3, 2, 1].map((id) => ({ id: `highlight-${id}`, content: `Win ${id}`, created_at: `2026-01-0${id}T09:00:00.000Z` })), error: null },
+        'health_entries:select': { data: null, error: null },
+        'goals:select': { data: [], error: null },
+        'meal_entries:select': { data: [{ food: 'Rice bowl', has_produce: true, has_protein: true, has_carbohydrate: false, has_healthy_fat: false }], error: null },
+        'tasks:select': { data: [{ id: 'task-1', title: 'Read', is_complete: false }], error: null },
+        rpc: { data: [{ status: 'insufficient_data', percentage: null, total_count: null }], error: null },
+      },
+    })
+
+    const dashboard = await loadDashboard('user-1', 'UTC')
+
+    expect(dashboard.highlights).toHaveLength(4)
+    expect(dashboard.highlights[0].entry).toBe('Win 5')
+    expect(dashboard.meals[0].food).toBe('Rice bowl')
+    expect(dashboard.mealFeedback.missing).toContain('healthy fat')
+    expect(dashboard.supporting.tasks.rows).toEqual([{ id: 'task-1', title: 'Read', isComplete: false }])
+  })
+
   test('loads core rows with the authenticated user and the profile local date', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-01-01T00:30:00.000Z'))
@@ -121,7 +197,8 @@ describe('dashboard persistence', () => {
     const dashboard = await loadDashboard('user-1', 'America/Los_Angeles')
 
     expect(dashboard.entryDate).toBe('2025-12-31')
-    expect(dashboard.signal.percentage).toBeNull()
+    expect(dashboard.signal.status).toBe('estimated')
+    expect(dashboard.signal.percentage).toBeGreaterThanOrEqual(42)
     for (const request of supabaseState.client.requests.filter(({ table }) =>
       ['mood_entries', 'highlights', 'health_entries', 'goals'].includes(table))) {
       expect(request.filters).toContainEqual(['user_id', 'user-1'])
@@ -141,7 +218,7 @@ describe('dashboard persistence', () => {
         'highlights:select': { data: [], error: null },
         'health_entries:select': { data: { hydration_glasses: 5, nourishing_meals: 2, sleep_minutes: 420, movement_minutes: 20 }, error: null },
         'goals:select': { data: [{ id: 'goal-1', title: 'Keep going', why: 'Because it matters', milestones: [] }], error: null },
-        'tasks:select': { data: [{ is_complete: true }, { is_complete: false }], error: null },
+        'tasks:select': { data: [{ id: 'task-1', title: 'Read', due_date: '2026-01-01', is_complete: true }, { id: 'task-2', title: 'Walk', due_date: null, is_complete: false }], error: null },
         'study_logs:select': { data: [{ topic: 'UI design', entry_date: '2026-01-01' }], error: null },
         'workout_entries:select': { data: [{ entry_date: '2026-01-01', minutes: 30 }], error: null },
         'sleep_entries:select': { data: [{ entry_date: '2026-01-01', minutes: 440 }], error: null },
@@ -152,7 +229,10 @@ describe('dashboard persistence', () => {
     const dashboard = await loadDashboard('user-1', 'UTC')
 
     expect(dashboard.supporting).toEqual({
-      tasks: { complete: 1, total: 2 },
+      tasks: { complete: 1, total: 2, rows: [
+        { id: 'task-1', title: 'Read', dueDate: '2026-01-01', isComplete: true },
+        { id: 'task-2', title: 'Walk', dueDate: null, isComplete: false },
+      ] },
       study: { topic: 'UI design', entryDate: '2026-01-01' },
       workout: { days: [0, 0, 0, 0, 0, 0, 30], todayMinutes: 30 },
       sleep: { averageMinutes: 440, days: [0, 0, 0, 0, 0, 0, 440], todayMinutes: 440 },

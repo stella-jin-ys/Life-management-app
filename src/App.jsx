@@ -16,13 +16,13 @@ export default function App({ user, profile, onSignOut }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   const navigate = useNavigate()
   const { selectedMood, selectedFeeling, highlights, metrics, goal, signal, supporting, loading, error,
-    selectMood, selectFeeling, addHighlight, updateMetric, toggleMilestone } = useDashboardData(user, profile)
+    meals, mealFeedback, selectMood, selectFeeling, addHighlight, updateMetric, toggleMilestone, toggleTask } = useDashboardData(user, profile)
   const dateLabel = new Intl.DateTimeFormat(undefined, {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: profile?.timezone || undefined,
   }).format(new Date())
 
   function navigateTo(section) {
-    if (['tasks', 'study', 'workout', 'sleeping', 'diary', 'finance'].includes(section)) {
+    if (['highlights', 'health', 'goals', 'tasks', 'study', 'workout', 'sleeping', 'diary', 'finance'].includes(section)) {
       setActiveSection(section)
       navigate(`/${section}`)
       return
@@ -54,12 +54,12 @@ export default function App({ user, profile, onSignOut }) {
       {loading && <p className="data-loading" role="status">Gathering your latest notes…</p>}
       <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={selectMood} />
       <div className="dashboard-grid">
-        <HighlightsPanel onAddHighlight={addHighlight} isDemo={!user} />
+        <HighlightsPanel highlights={highlights} onAddHighlight={addHighlight} onOpenPage={navigateTo} isDemo={!user} />
         <LowBatteryPanel feelings={feelings} selectedFeeling={selectedFeeling}
           signal={signal} onSelectFeeling={selectFeeling} />
-        <HealthPanel metrics={metrics} onAdjustMetric={updateMetric} />
-        <GoalsPanel goal={goal} onToggleMilestone={toggleMilestone} />
-        <SupportingTiles summaries={supporting} />
+        <HealthPanel metrics={metrics} meals={meals} mealFeedback={mealFeedback} onAdjustMetric={updateMetric} onOpenPage={navigateTo} />
+        <GoalsPanel goal={goal} onToggleMilestone={toggleMilestone} onOpenPage={navigateTo} />
+        <SupportingTiles summaries={supporting} onToggleTask={toggleTask} onOpenPage={navigateTo} />
       </div>
     </AppShell>
   )

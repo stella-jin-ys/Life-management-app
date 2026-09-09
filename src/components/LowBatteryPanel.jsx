@@ -17,7 +17,7 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onS
       <div className="compact-signal">
         <strong>{percentage == null ? '—' : `${percentage}%`}</strong>
         <span>{signal.status === 'insufficient_data'
-          ? 'private until there is enough data'
+          ? 'estimated common feeling today'
           : signal.status === 'available' ? 'of recent shared check-ins' : 'feel this too · demo signal'}</span>
       </div>
 
@@ -32,8 +32,8 @@ export default function LowBatteryPanel({ feelings, selectedFeeling, signal, onS
         <div className="battery-meter" aria-label={percentage == null ? 'Shared feeling percentage unavailable' : `${percentage}% shared feeling signal`}>
           <span style={{ transform: `scaleX(${(percentage || 0) / 100})` }} />
         </div>
-        <p className="signal-number"><strong>{percentage == null ? '—' : `${percentage}%`}</strong> {signal.status === 'insufficient_data' ? 'Not enough shared check-ins yet to show a comparison.' : 'of recent check-ins named something similar.'}</p>
-        <p className="signal-label">{signal.status === 'insufficient_data' ? 'Private until there is enough data' : signal.status ? 'Community comfort signal' : 'Demo community signal'}</p>
+        <p className="signal-number"><strong>{percentage == null ? '—' : `${percentage}%`}</strong> {signal.status === 'insufficient_data' ? 'Estimated until enough shared check-ins exist.' : signal.status === 'estimated' ? 'Estimated from today’s feeling signal.' : 'of recent check-ins named something similar.'}</p>
+        <p className="signal-label">{signal.status === 'insufficient_data' ? 'Estimated community signal' : signal.status === 'estimated' ? 'Estimated community signal' : signal.status ? 'Community comfort signal' : 'Demo community signal'}</p>
       </div>
 
       <blockquote>{signal.affirmation}</blockquote>

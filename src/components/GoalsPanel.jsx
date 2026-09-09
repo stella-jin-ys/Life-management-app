@@ -1,6 +1,6 @@
 import { ArrowRight, Check, Flag } from 'lucide-react'
 
-export default function GoalsPanel({ goal, onToggleMilestone }) {
+export default function GoalsPanel({ goal, onToggleMilestone, onOpenPage }) {
   const next = goal?.milestones.find(({ complete }) => !complete)
 
   return (
@@ -31,6 +31,7 @@ export default function GoalsPanel({ goal, onToggleMilestone }) {
         <p>{next ? next.label : 'Pause and notice how far you came.'}</p>
         <ArrowRight aria-hidden="true" size={18} />
       </div>
+      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('goals')}>View goal board</button>}
     </section>
   )
 }

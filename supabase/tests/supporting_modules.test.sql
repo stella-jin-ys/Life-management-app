@@ -1,6 +1,6 @@
 begin;
 
-select plan(48);
+select plan(55);
 
 insert into auth.users (id, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -14,6 +14,7 @@ select has_table('public', 'workout_entries', 'workout entries table exists');
 select has_table('public', 'sleep_entries', 'sleep entries table exists');
 select has_table('public', 'diary_entries', 'diary entries table exists');
 select has_table('public', 'finance_entries', 'finance entries table exists');
+select has_table('public', 'meal_entries', 'meal entries table exists');
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000011', true);
 set local role authenticated;
@@ -30,6 +31,8 @@ insert into public.diary_entries (id, user_id, entry_date, content)
 values ('40000000-0000-0000-0000-000000000005', auth.uid(), '2026-09-07', 'A calm day.');
 insert into public.finance_entries (id, user_id, entry_date, label, amount_cents)
 values ('40000000-0000-0000-0000-000000000006', auth.uid(), '2026-09-07', 'Lunch', -1295);
+insert into public.meal_entries (user_id, entry_date, meal_type, food, has_produce, has_protein)
+values (auth.uid(), '2026-09-07', 'lunch', 'Rice bowl', true, true);
 
 select throws_ok(
   $$insert into public.tasks (user_id, title) values (auth.uid(), '')$$,
@@ -99,6 +102,15 @@ select throws_ok(
   $$insert into public.finance_entries (user_id, entry_date, label, amount_cents) values (auth.uid(), current_date, 'Large credit', 100000001)$$,
   '23514', null, 'finance credits above the allowed range are rejected'
 );
+select throws_ok(
+  $$insert into public.meal_entries (user_id, entry_date, meal_type, food) values (auth.uid(), current_date, 'lunch', '')$$,
+  '23514', null, 'blank meal foods are rejected'
+);
+select throws_ok(
+  $$insert into public.meal_entries (user_id, entry_date, meal_type, food) values (auth.uid(), current_date, 'brunch', 'Toast')$$,
+  '23514', null, 'invalid meal types are rejected'
+);
+select is((select count(*)::integer from public.meal_entries), 1, 'user one can read their meals');
 
 select throws_ok(
   $$insert into public.workout_entries (user_id, entry_date, activity, minutes) values (auth.uid(), '2026-09-07', 'Running', 20)$$,
@@ -130,6 +142,7 @@ reset role;
 select set_config('request.jwt.claim.sub', '20000000-0000-0000-0000-000000000022', true);
 set local role authenticated;
 select is((select count(*)::integer from public.tasks), 0, 'user two cannot select user-one tasks');
+select is((select count(*)::integer from public.meal_entries), 0, 'user two cannot select user-one meals');
 select throws_ok(
   $$insert into public.tasks (user_id, title) values ('10000000-0000-0000-0000-000000000011', 'Not mine')$$,
   '42501', null, 'user two cannot insert for user one'
@@ -155,6 +168,7 @@ select throws_ok($$select * from public.workout_entries$$, '42501', null, 'anony
 select throws_ok($$select * from public.sleep_entries$$, '42501', null, 'anonymous users cannot select sleep entries');
 select throws_ok($$select * from public.diary_entries$$, '42501', null, 'anonymous users cannot select diary entries');
 select throws_ok($$select * from public.finance_entries$$, '42501', null, 'anonymous users cannot select finance entries');
+select throws_ok($$select * from public.meal_entries$$, '42501', null, 'anonymous users cannot select meal entries');
 
 reset role;
 insert into public.tasks (user_id, title) values ('30000000-0000-0000-0000-000000000033', 'Cascade task');
@@ -163,6 +177,7 @@ insert into public.workout_entries (user_id, entry_date, activity, minutes) valu
 insert into public.sleep_entries (user_id, entry_date, minutes) values ('30000000-0000-0000-0000-000000000033', '2026-09-07', 1);
 insert into public.diary_entries (user_id, entry_date, content) values ('30000000-0000-0000-0000-000000000033', '2026-09-07', 'Cascade diary');
 insert into public.finance_entries (user_id, entry_date, label, amount_cents) values ('30000000-0000-0000-0000-000000000033', '2026-09-07', 'Cascade finance', 1);
+insert into public.meal_entries (user_id, entry_date, meal_type, food) values ('30000000-0000-0000-0000-000000000033', '2026-09-07', 'dinner', 'Cascade meal');
 delete from auth.users where id = '30000000-0000-0000-0000-000000000033';
 select is((select count(*)::integer from public.tasks where user_id = '30000000-0000-0000-0000-000000000033'), 0, 'auth deletion cascades to tasks');
 select is((select count(*)::integer from public.study_logs where user_id = '30000000-0000-0000-0000-000000000033'), 0, 'auth deletion cascades to study logs');
@@ -170,6 +185,7 @@ select is((select count(*)::integer from public.workout_entries where user_id = 
 select is((select count(*)::integer from public.sleep_entries where user_id = '30000000-0000-0000-0000-000000000033'), 0, 'auth deletion cascades to sleep entries');
 select is((select count(*)::integer from public.diary_entries where user_id = '30000000-0000-0000-0000-000000000033'), 0, 'auth deletion cascades to diary entries');
 select is((select count(*)::integer from public.finance_entries where user_id = '30000000-0000-0000-0000-000000000033'), 0, 'auth deletion cascades to finance entries');
+select is((select count(*)::integer from public.meal_entries where user_id = '30000000-0000-0000-0000-000000000033'), 0, 'auth deletion cascades to meal entries');
 
 select * from finish();
 rollback;

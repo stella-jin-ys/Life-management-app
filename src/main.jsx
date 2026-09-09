@@ -10,6 +10,9 @@ import { ProtectedRoute, PublicOnlyRoute } from './features/auth/ProtectedRoute.
 import ResetPasswordPage from './features/auth/ResetPasswordPage.jsx'
 import DemoRoutes from './features/modules/DemoRoutes.jsx'
 import ModulePage from './features/modules/ModulePage.jsx'
+import GoalsPage from './features/goals/GoalsPage.jsx'
+import HealthPage from './features/health/HealthPage.jsx'
+import HighlightsPage from './features/highlights/HighlightsPage.jsx'
 import './styles.css'
 
 function AuthenticatedApp() {
@@ -18,11 +21,13 @@ function AuthenticatedApp() {
 }
 
 const moduleRoutes = new Set(['tasks', 'study', 'workout', 'sleeping', 'diary', 'finance'])
+const featureRoutes = new Set(['highlights', 'health', 'goals'])
 
 function useShellNavigation() {
   const navigate = useNavigate()
   return (section) => {
     if (moduleRoutes.has(section)) navigate(`/${section}`)
+    else if (featureRoutes.has(section)) navigate(`/${section}`)
     else if (section === 'settings') navigate('/settings')
     else navigate('/')
   }
@@ -36,6 +41,17 @@ function ModuleRoute({ module }) {
   }).format(new Date())
   return <AppShell activeSection={module} onNavigate={navigate} user={user} profile={profile}
     onSignOut={signOut} dateLabel={dateLabel}><ModulePage module={module} user={user} profile={profile} /></AppShell>
+}
+
+function FeatureRoute({ feature }) {
+  const { user, profile, signOut } = useAuth()
+  const navigate = useShellNavigation()
+  const dateLabel = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: profile?.timezone || undefined,
+  }).format(new Date())
+  const Page = { highlights: HighlightsPage, health: HealthPage, goals: GoalsPage }[feature]
+  return <AppShell activeSection={feature} onNavigate={navigate} user={user} profile={profile}
+    onSignOut={signOut} dateLabel={dateLabel}><Page user={user} profile={profile} /></AppShell>
 }
 
 function SettingsRoute() {
@@ -62,6 +78,9 @@ function AppRoutes() {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<AuthenticatedApp />} />
+          <Route path="/highlights" element={<FeatureRoute feature="highlights" />} />
+          <Route path="/health" element={<FeatureRoute feature="health" />} />
+          <Route path="/goals" element={<FeatureRoute feature="goals" />} />
           <Route path="/tasks" element={<ModuleRoute module="tasks" />} />
           <Route path="/study" element={<ModuleRoute module="study" />} />
           <Route path="/workout" element={<ModuleRoute module="workout" />} />

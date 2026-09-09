@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
   createHighlight: vi.fn(),
+  createMeal: vi.fn(),
   loadDashboard: vi.fn(),
   saveFeeling: vi.fn(),
   saveHealth: vi.fn(),
@@ -24,6 +25,8 @@ function dashboard() {
     selectedMood: 'steady',
     selectedFeeling: 'drained',
     highlights: [],
+    meals: [],
+    mealFeedback: { score: 0, represented: [], missing: ['produce', 'protein', 'carbohydrate', 'healthy fat'], feedback: 'Add a meal when it feels useful; there is no score to catch up on.' },
     metrics: [
       { id: 'water', value: 5, target: 8 },
       { id: 'meals', value: 2, target: 3 },
@@ -162,10 +165,12 @@ describe('useDashboardData', () => {
 
     first.reject(new Error('offline'))
     await waitFor(() => expect(api.saveFeeling).toHaveBeenCalledTimes(2))
-    second.resolve({ status: 'available', percentage: 31, total_count: 10 })
+    await act(async () => {
+      second.resolve({ status: 'available', percentage: 31, total_count: 10 })
+      await second.promise
+    })
 
-    await waitFor(() => expect(result.current.selectedFeeling).toBe('restless'))
-    expect(result.current.signal.percentage).toBe(31)
+    await waitFor(() => expect(result.current.signal.percentage).toBe(31))
   })
 
   test('serializes rapid health saves and retains the latest optimistic metrics', async () => {

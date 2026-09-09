@@ -39,6 +39,12 @@ export type Database = {
         Update: { id?: string; user_id?: string; entry_date?: string; hydration_glasses?: number; nourishing_meals?: number; sleep_minutes?: number; movement_minutes?: number; created_at?: string; updated_at?: string }
         Relationships: []
       }
+      meal_entries: {
+        Row: { id: string; user_id: string; entry_date: string; meal_type: string; food: string; has_produce: boolean; has_protein: boolean; has_carbohydrate: boolean; has_healthy_fat: boolean; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; entry_date?: string; meal_type: string; food: string; has_produce?: boolean; has_protein?: boolean; has_carbohydrate?: boolean; has_healthy_fat?: boolean; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; entry_date?: string; meal_type?: string; food?: string; has_produce?: boolean; has_protein?: boolean; has_carbohydrate?: boolean; has_healthy_fat?: boolean; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
       goals: {
         Row: { id: string; user_id: string; title: string; why: string; status: string; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; title: string; why?: string; status?: string; created_at?: string; updated_at?: string }

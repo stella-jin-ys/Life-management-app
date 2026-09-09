@@ -41,32 +41,42 @@ function SleepChart({ days }) {
   )
 }
 
-export default function SupportingTiles({ summaries = {} }) {
+export default function SupportingTiles({ summaries = {}, onToggleTask, onOpenPage }) {
   const { tasks, study, workout, sleep } = summaries
   return (
     <>
       <Tile id="tasks" title="Tasks" icon={CheckCircle2} className="tasks-tile">
         {tasks ? <>
           <span className="support-copy">{tasks.complete} of {tasks.total} done</span>
-          <span className="mini-progress"><span style={{ transform: `scaleX(${tasks.complete / tasks.total})` }} /></span>
+          <span className="mini-progress"><span style={{ transform: `scaleX(${tasks.total ? tasks.complete / tasks.total : 0})` }} /></span>
+          <div className="task-preview-list">
+            {(tasks.rows || []).map((task) => <label className="task-preview" key={task.id}>
+              <input type="checkbox" checked={task.isComplete} onChange={(event) => onToggleTask?.(task.id, event.target.checked)} />
+              <span>{task.title}</span>
+            </label>)}
+          </div>
+          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('tasks')}>View tasks</button>}
         </> : <span className="support-empty">No tasks yet</span>}
       </Tile>
       <Tile id="study" title="Study" icon={BookOpen} className="study-tile">
         {study ? <>
           <strong className="support-value">{study.topic}</strong>
           <span className="support-note">Logged today</span>
+          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('study')}>View study</button>}
         </> : <span className="support-empty">No study logged today</span>}
       </Tile>
       <Tile id="workout" title="Workout" icon={Dumbbell} className="workout-tile">
         {workout ? <>
           <WorkoutChart days={workout.days} />
           <span className="support-note">{workout.todayMinutes ? `${workout.todayMinutes} min today` : 'No workout today'}</span>
+          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('workout')}>View workout</button>}
         </> : <span className="support-empty">No workouts logged yet</span>}
       </Tile>
       <Tile id="sleeping" title="Sleeping" icon={Moon} className="sleeping-tile">
         {sleep ? <>
           <div className="sleep-summary"><strong>{sleep.todayMinutes ? formatMinutes(sleep.todayMinutes) : 'No sleep today'}</strong><span>avg {formatMinutes(sleep.averageMinutes)}</span></div>
           <SleepChart days={sleep.days} />
+          {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('sleeping')}>View sleep</button>}
         </> : <span className="support-empty">No sleep logged yet</span>}
       </Tile>
     </>

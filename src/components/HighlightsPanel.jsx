@@ -1,7 +1,7 @@
 import { Plus, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
-export default function HighlightsPanel({ onAddHighlight, isDemo = false }) {
+export default function HighlightsPanel({ highlights = [], onAddHighlight, onOpenPage, isDemo = false }) {
   const [entry, setEntry] = useState('')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -46,6 +46,15 @@ export default function HighlightsPanel({ onAddHighlight, isDemo = false }) {
           <span key={index} style={{ '--stem-height': `${height}px` }} />
         ))}
       </div>
+
+      {highlights.length ? <div className="highlight-feed" aria-label="Latest highlights">
+        {highlights.slice(0, 4).map((highlight) => <article className="highlight-entry" key={highlight.id}>
+          <Sparkles aria-hidden="true" size={14} />
+          <div><strong>{highlight.entry}</strong><p>{highlight.compliment}</p><small>{highlight.time}</small></div>
+        </article>)}
+      </div> : <p className="dashboard-empty">Your first small win can grow here.</p>}
+
+      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('highlights')}>View all highlights</button>}
 
       <form className="quick-highlight-form" onSubmit={submit}>
         <label className="visually-hidden" htmlFor="quick-highlight-entry">Quick highlight</label>
