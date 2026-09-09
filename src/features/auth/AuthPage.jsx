@@ -22,6 +22,12 @@ function providerErrorMessage(error) {
   if (code === 'user_already_exists' || /already registered/i.test(message)) {
     return 'An account with this email already exists. Try signing in instead.'
   }
+  if (code === 'invalid_credentials' || /invalid login credentials/i.test(message)) {
+    return 'Email or password is incorrect. Try again or use Forgot your password.'
+  }
+  if (code === 'email_not_confirmed' || /email not confirmed/i.test(message)) {
+    return 'Email confirmation is still required for this account. Check your inbox or ask the app owner to confirm it in Supabase.'
+  }
   if (code === 'database_error' || /database error saving new user/i.test(message)) {
     return 'Account setup is not ready yet. Please try again, and if it continues, check the Supabase database migration.'
   }

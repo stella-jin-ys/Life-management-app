@@ -166,15 +166,24 @@ describe('authentication forms', () => {
     expect(authMocks.signUp).not.toHaveBeenCalled()
   })
 
-  test('shows a generic sign-in error', async () => {
-    authMocks.signIn.mockResolvedValue({ error: new Error('provider detail') })
+  test('explains invalid sign-in credentials', async () => {
+    authMocks.signIn.mockResolvedValue({ error: { code: 'invalid_credentials', status: 400 } })
     renderPage('/login')
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'stella@example.test' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse battery staple' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('We could not complete that request. Check your details and try again.')
-    expect(screen.getByRole('alert')).not.toHaveTextContent('provider detail')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Email or password is incorrect')
+  })
+
+  test('explains when sign-in still requires email confirmation', async () => {
+    authMocks.signIn.mockResolvedValue({ error: { code: 'email_not_confirmed', status: 400 } })
+    renderPage('/login')
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'stella@example.test' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'correct horse battery staple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Email confirmation is still required')
   })
 
   test('confirms forgot-password requests without revealing account existence', async () => {
