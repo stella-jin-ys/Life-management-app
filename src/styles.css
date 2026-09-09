@@ -135,6 +135,35 @@ button:active:not(:disabled) { transform: translateY(1px); }
 }
 .rail-note p { margin: 0; font-size: .77rem; line-height: 1.5; }
 .rail-note strong { display: block; color: var(--ink); }
+.account-footer {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 10px 24px rgb(78 94 76 / 8%);
+}
+.account-footer > div { display: grid; gap: 3px; min-width: 0; }
+.account-footer strong { overflow: hidden; color: var(--ink); font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-footer small { overflow: hidden; color: var(--muted); font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
+.account-footer button {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 11px;
+  color: #fffdf8;
+  background: var(--coral-deep);
+  font-size: .76rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 7px 16px rgb(200 77 67 / 18%);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.account-footer button:hover { background: #de6253; box-shadow: 0 9px 20px rgb(200 77 67 / 24%); }
+.account-footer button:active:not(:disabled) { transform: translateY(1px); }
+.account-footer button:focus-visible { outline: 3px solid var(--coral-deep); outline-offset: 3px; }
 .mobile-header, .mobile-menu { display: none; }
 
 .dashboard { min-height: 100vh; margin-left: 280px; padding: 46px clamp(28px, 4.6vw, 74px) 80px; }
@@ -444,6 +473,8 @@ body { padding: 12px; background: #151515; }
 .navigation-link[aria-current='page'] { color: var(--ink); background: var(--paper); box-shadow: 0 8px 20px rgb(78 94 76 / 9%); }
 .navigation-link.navigation-divider { margin-top: 12px; padding-top: 14px; }
 .navigation-link.navigation-divider { border-top: 1px solid var(--line); border-radius: 0 0 13px 13px; }
+.navigation-rail .account-footer { margin-top: 18px; }
+.navigation-panel .account-footer { margin-top: 24px; }
 .navigation-link:disabled { cursor: not-allowed; opacity: .52; }
 .nav-arrow { display: none; }
 .mobile-greeting { display: grid; gap: 1px; line-height: 1; }
