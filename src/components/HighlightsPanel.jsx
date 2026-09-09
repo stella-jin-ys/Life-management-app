@@ -104,8 +104,8 @@ export default function HighlightsPanel({ highlights = [], onAddHighlight, onUpd
         </button>
         {editingId && <button className="cancel-highlight-edit" type="button" aria-label="Cancel highlight edit" onClick={() => { setEditingId(null); setEntry('') }} disabled={saving}><X aria-hidden="true" size={15} /></button>}
       </form>
-      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('highlights')}>View all highlights</button>}
       {error && <p className="field-error" role="alert">{error}</p>}
+      {onOpenPage && <button className="panel-link" type="button" onClick={() => onOpenPage('highlights')}>View all highlights</button>}
 
     </section>
   )
