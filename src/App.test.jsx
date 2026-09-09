@@ -10,6 +10,8 @@ const api = vi.hoisted(() => ({
   saveHealth: vi.fn(),
   saveMilestone: vi.fn(),
   saveMood: vi.fn(),
+  updateHighlight: vi.fn(),
+  deleteHighlight: vi.fn(),
   updateTask: vi.fn(),
 }))
 
@@ -103,6 +105,33 @@ test('projects the latest highlights, meals, and task rows onto the dashboard', 
   expect(screen.getByText('Rice bowl')).toBeVisible()
   fireEvent.click(screen.getByRole('checkbox', { name: 'Read' }))
   await waitFor(() => expect(api.updateTask).toHaveBeenCalledWith('user-1', 'task-1', true))
+})
+
+test('keeps dashboard highlights concise and supports editing or deleting them', async () => {
+  api.loadDashboard.mockResolvedValue(authenticatedDashboard({
+    highlights: [
+      { id: 'highlight-1', entry: 'Win 1', compliment: 'Good 1', time: 'Now' },
+      { id: 'highlight-2', entry: 'Win 2', compliment: 'Good 2', time: 'Yesterday' },
+    ],
+  }))
+  api.updateHighlight.mockResolvedValue({ id: 'highlight-1', entry: 'Win 1 updated', compliment: 'Good 1', time: 'Now' })
+  api.deleteHighlight.mockResolvedValue()
+
+  renderApp(<App user={{ id: 'user-1', email: 'stella@example.com' }} profile={{ timezone: 'Europe/Stockholm' }} />)
+
+  await waitFor(() => expect(screen.getByText('Win 1')).toBeVisible())
+  expect(screen.queryByText('Good 1')).not.toBeInTheDocument()
+  expect(screen.queryByText('Now')).not.toBeInTheDocument()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Win 1' }))
+  const input = screen.getByRole('textbox', { name: 'Quick highlight' })
+  expect(input).toHaveValue('Win 1')
+  fireEvent.change(input, { target: { value: 'Win 1 updated' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Save highlight edit' }))
+  await waitFor(() => expect(api.updateHighlight).toHaveBeenCalledWith('user-1', 'highlight-1', 'Win 1 updated'))
+
+  fireEvent.click(screen.getByRole('button', { name: 'Delete Win 2' }))
+  await waitFor(() => expect(api.deleteHighlight).toHaveBeenCalledWith('user-1', 'highlight-2'))
 })
 
 test('keeps every destination enabled in the side menu', () => {

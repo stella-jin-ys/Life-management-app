@@ -772,6 +772,38 @@ body { padding: 12px; background: #151515; }
 .task-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-preview input:checked + span { color: var(--muted); text-decoration: line-through; }
 
+/* Responsive refinement: keep dense cards readable and make logging pages read top-to-bottom. */
+.dashboard-grid { align-items: stretch; grid-auto-rows: minmax(150px, auto); }
+.dashboard-grid > .panel { align-self: stretch; width: 100%; min-width: 0; height: 100%; box-sizing: border-box; }
+.highlights-panel { min-height: 0; }
+.highlight-entry { grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; min-width: 0; }
+.highlight-entry-copy { min-width: 0; }
+.highlight-entry-copy strong { display: block; overflow: hidden; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.highlight-entry-actions { display: flex; gap: 3px; align-items: center; }
+.highlight-action, .cancel-highlight-edit { display: grid; width: 28px; height: 28px; place-items: center; border: 0; border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; }
+.highlight-action:hover, .highlight-action:focus-visible { color: var(--coral-deep); background: #fff0df; }
+.highlight-action:disabled, .cancel-highlight-edit:disabled { cursor: wait; opacity: .5; }
+.cancel-highlight-edit { color: var(--muted); background: var(--line); }
+
+.settings-page, .module-page, .feature-page { width: min(100%, 1040px); box-sizing: border-box; }
+.settings-page { max-width: 1040px; }
+.settings-heading h1, .module-heading h1 { font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.08; }
+.settings-form { width: 100%; box-sizing: border-box; }
+.module-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.module-form { width: 100%; box-sizing: border-box; }
+.module-form input, .module-form textarea, .module-form select { box-sizing: border-box; }
+.module-entries { width: 100%; padding-top: 4px; }
+
+@media (max-width: 700px) {
+  .dashboard-grid > .panel { height: auto; }
+  .highlight-feed { width: 100%; }
+  .highlight-entry { width: 100%; grid-template-columns: 18px minmax(0, 1fr) auto; box-sizing: border-box; }
+  .highlight-action { width: 32px; height: 32px; }
+  .settings-page, .module-page, .feature-page { width: 100%; }
+  .settings-heading h1, .module-heading h1 { font-size: clamp(2rem, 10vw, 2.75rem); }
+  .module-layout { gap: 18px; }
+}
+
 @media (max-width: 767px) {
   .module-page { padding: 22px 18px; }
   .module-layout { grid-template-columns: 1fr; gap: 18px; margin-top: 24px; }

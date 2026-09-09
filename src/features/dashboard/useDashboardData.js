@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { feelings, healthMetrics, initialGoal, initialHighlights, moods } from '../../data/demoData.js'
 import { localDate } from './date.js'
 import { getComfortSignal } from '../../lib/dashboard.js'
-import { createHighlight, createMeal, loadDashboard, saveFeeling, saveHealth, saveMilestone, saveMood, updateTask } from '../../lib/lifeApi.js'
+import { createHighlight, createMeal, deleteHighlight as removeHighlight, loadDashboard, saveFeeling, saveHealth, saveMilestone, saveMood, updateHighlight as saveHighlightEdit, updateTask } from '../../lib/lifeApi.js'
 import { getEstimatedFeelingSignal, getMealBalance } from '../../lib/wellbeing.js'
 
 const demoState = {
@@ -194,6 +194,37 @@ export default function useDashboardData(user, profile) {
           setError(retryMessage)
           throw saveError
         })
+    },
+    updateHighlight: async (id, content) => {
+      const previous = state.highlights.find(({ id: highlightId }) => highlightId === id)
+      if (!previous) return null
+      const optimistic = { ...previous, entry: content }
+      setState((current) => ({ ...current, highlights: current.highlights.map((highlight) => highlight.id === id ? optimistic : highlight) }))
+      if (!user) return optimistic
+      try {
+        const saved = await saveHighlightEdit(user.id, id, content)
+        setState((current) => ({ ...current, highlights: current.highlights.map((highlight) => highlight.id === id ? saved : highlight) }))
+        setError('')
+        return saved
+      } catch (saveError) {
+        setState((current) => ({ ...current, highlights: current.highlights.map((highlight) => highlight.id === id ? previous : highlight) }))
+        setError(retryMessage)
+        throw saveError
+      }
+    },
+    deleteHighlight: async (id) => {
+      const previous = state.highlights
+      setState((current) => ({ ...current, highlights: current.highlights.filter(({ id: highlightId }) => highlightId !== id) }))
+      if (!user) return true
+      try {
+        await removeHighlight(user.id, id)
+        setError('')
+        return true
+      } catch (deleteError) {
+        setState((current) => ({ ...current, highlights: previous }))
+        setError(retryMessage)
+        throw deleteError
+      }
     },
     updateMetric: async (id, delta) => {
       const nextMetrics = state.metrics.map((metric) => metric.id === id ? { ...metric, value: Math.max(0, Number((metric.value + delta).toFixed(1))) } : metric)

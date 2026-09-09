@@ -300,6 +300,20 @@ export async function createHighlight(userId, content) {
   return { ...saved, compliment: fallback, complimentStatus: 'fallback' }
 }
 
+export async function updateHighlight(userId, id, content) {
+  const normalized = typeof content === 'string' ? content.trim() : ''
+  if (!normalized || normalized.length > 240) throw new Error('Add a highlight up to 240 characters.')
+  const { data, error } = await requireClient().from('highlights').update({ content: normalized })
+    .eq('id', id).eq('user_id', userId).select().single()
+  if (error) throw error
+  return mapHighlight(data)
+}
+
+export async function deleteHighlight(userId, id) {
+  const { error } = await requireClient().from('highlights').delete().eq('id', id).eq('user_id', userId)
+  if (error) throw error
+}
+
 export async function saveHealth(userId, metrics, timezone) {
   const values = Object.fromEntries(metrics.map(({ id, value }) => [id, value]))
   const { error } = await requireClient().from('health_entries').upsert({

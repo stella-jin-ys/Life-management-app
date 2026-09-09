@@ -16,7 +16,7 @@ export default function App({ user, profile, onSignOut }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   const navigate = useNavigate()
   const { selectedMood, selectedFeeling, highlights, metrics, goal, signal, supporting, loading, error,
-    meals, mealFeedback, selectMood, selectFeeling, addHighlight, updateMetric, toggleMilestone, toggleTask } = useDashboardData(user, profile)
+    meals, mealFeedback, selectMood, selectFeeling, addHighlight, updateHighlight, deleteHighlight, updateMetric, toggleMilestone, toggleTask } = useDashboardData(user, profile)
   const dateLabel = new Intl.DateTimeFormat(undefined, {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: profile?.timezone || undefined,
   }).format(new Date())
@@ -54,7 +54,8 @@ export default function App({ user, profile, onSignOut }) {
       {loading && <p className="data-loading" role="status">Gathering your latest notes…</p>}
       <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={selectMood} />
       <div className="dashboard-grid">
-        <HighlightsPanel highlights={highlights} onAddHighlight={addHighlight} onOpenPage={navigateTo} isDemo={!user} />
+        <HighlightsPanel highlights={highlights} onAddHighlight={addHighlight} onUpdateHighlight={updateHighlight}
+          onDeleteHighlight={deleteHighlight} onOpenPage={navigateTo} isDemo={!user} />
         <LowBatteryPanel feelings={feelings} selectedFeeling={selectedFeeling}
           signal={signal} onSelectFeeling={selectFeeling} />
         <HealthPanel metrics={metrics} meals={meals} mealFeedback={mealFeedback} onAdjustMetric={updateMetric} onOpenPage={navigateTo} />

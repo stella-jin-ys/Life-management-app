@@ -13,6 +13,8 @@ import {
   createMilestone,
   createMeal,
   createHighlight,
+  updateHighlight,
+  deleteHighlight,
   loadDashboard,
   listGoals,
   listMeals,
@@ -68,6 +70,10 @@ function createFakeClient({ responses = {}, functionResponse = {} } = {}) {
       update(payload) {
         request.action = 'update'
         request.payload = payload
+        return query
+      },
+      delete() {
+        request.action = 'delete'
         return query
       },
       maybeSingle() {
@@ -315,6 +321,32 @@ describe('dashboard persistence', () => {
       compliment: '“Called a friend” counts. You noticed what helped, and that kind of attention builds a life you can feel.',
       complimentStatus: 'fallback',
     })
+  })
+
+  test('scopes highlight edits and deletes to the authenticated user', async () => {
+    supabaseState.client = createFakeClient({
+      responses: {
+        'highlights:update': { data: { id: 'highlight-1', content: 'Edited win', created_at: '2026-01-01T09:00:00.000Z' }, error: null },
+        'highlights:delete': { data: null, error: null },
+      },
+    })
+
+    await updateHighlight('user-1', 'highlight-1', 'Edited win')
+    await deleteHighlight('user-1', 'highlight-1')
+
+    expect(supabaseState.client.requests).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'highlights',
+        action: 'update',
+        filters: [['id', 'highlight-1'], ['user_id', 'user-1']],
+        payload: { content: 'Edited win' },
+      }),
+      expect.objectContaining({
+        table: 'highlights',
+        action: 'delete',
+        filters: [['id', 'highlight-1'], ['user_id', 'user-1']],
+      }),
+    ]))
   })
 
   test('confirms a milestone update is scoped to its requested record', async () => {
