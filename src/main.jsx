@@ -95,7 +95,7 @@ function AppRoutes() {
   )
 }
 
-const demoMode = import.meta.env.VITE_DEMO_MODE === 'true' || (import.meta.env.DEV && new URLSearchParams(window.location.search).has('demo'))
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true' || import.meta.env.DEV
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

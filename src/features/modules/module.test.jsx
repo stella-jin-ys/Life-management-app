@@ -196,6 +196,13 @@ describe('supporting module forms', () => {
 })
 
 describe('demo module routes', () => {
+  test('redirects auth-like local paths to the demo dashboard', async () => {
+    render(<MemoryRouter initialEntries={['/forgot-password']}><DemoRoutes /></MemoryRouter>)
+
+    expect(await screen.findByRole('heading', { name: 'Good morning, Stella' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Forgot password' })).not.toBeInTheDocument()
+  })
+
   test('renders a local-only Tasks page at the demo module route', async () => {
     render(<MemoryRouter initialEntries={['/tasks?demo']}><DemoRoutes /></MemoryRouter>)
 
