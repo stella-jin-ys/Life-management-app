@@ -61,6 +61,27 @@ test('renders the dashboard greeting and navigation', () => {
   ).toBeInTheDocument()
 })
 
+test('makes the dashboard greeting link back to the dashboard', () => {
+  renderApp(<App />)
+
+  expect(screen.getAllByRole('link', { name: 'Dashboard home' })).toHaveLength(2)
+  expect(screen.getAllByRole('link', { name: 'Dashboard home' })[0]).toHaveAttribute('href', '/')
+})
+
+test('scrolls to the top when a mobile shortcut navigates', () => {
+  const originalScrollTo = window.scrollTo
+  window.scrollTo = vi.fn()
+
+  try {
+    renderApp(<App />)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Highlights' }).at(-1))
+
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'smooth' })
+  } finally {
+    window.scrollTo = originalScrollTo
+  }
+})
+
 test('shows every primary destination and marks the selected destination', () => {
   renderApp(<App />)
 

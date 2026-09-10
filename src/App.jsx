@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import AppShell from './components/AppShell.jsx'
 import GoalsPanel from './components/GoalsPanel.jsx'
@@ -39,7 +39,7 @@ export default function App({ user, profile, onSignOut }) {
   return (
     <AppShell activeSection={activeSection} onNavigate={navigateTo} user={user} profile={profile}
       onSignOut={onSignOut} dateLabel={dateLabel}>
-      <div className="dashboard-intro">
+      <Link className="dashboard-intro" to="/" aria-label="Dashboard home">
         <div className="daylight-mark" aria-hidden="true"><SunMedium size={28} strokeWidth={1.7} /></div>
         <div className="welcome-copy">
           <h1>Good morning, {profile?.display_name || 'Stella'}</h1>
@@ -49,7 +49,7 @@ export default function App({ user, profile, onSignOut }) {
             gentle next step.
           </p>
         </div>
-      </div>
+      </Link>
       {error && <p className="data-error" role="alert">{error}</p>}
       {loading && <p className="data-loading" role="status">Gathering your latest notes…</p>}
       <MoodCheckIn moods={moods} selectedMood={selectedMood} onSelect={selectMood} />

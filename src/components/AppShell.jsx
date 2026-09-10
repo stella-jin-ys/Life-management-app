@@ -11,6 +11,7 @@ export default function AppShell({ activeSection, onNavigate, children, user, pr
   function navigate(section) {
     onNavigate(section)
     setMenuOpen(false)
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
   }
 
   return (
